@@ -40,12 +40,19 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { searchParams } = new URL(req.url)
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '9')
+    const skip = (page - 1) * limit
+
     const memos = await prisma.memo.findMany({
       where: { userId: session.user.id },
       orderBy: { updatedAt: 'desc' },
+      take: limit,
+      skip,
     })
 
-    return NextResponse.json(memos)
+    return NextResponse.json({ memos })
   } catch (error) {
     return NextResponse.json({ error: 'Something went wrong' }, { status: 500 })
   }
