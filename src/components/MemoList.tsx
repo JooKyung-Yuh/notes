@@ -13,10 +13,19 @@ interface Memo {
 
 interface MemoListProps {
   initialMemos: Memo[]
+  searchQuery?: string
 }
 
-export function MemoList({ initialMemos }: MemoListProps) {
-  const [memos, setMemos] = useState<Memo[]>(initialMemos)
+export function MemoList({ initialMemos, searchQuery }: MemoListProps) {
+  const [memos, setMemos] = useState<Memo[]>(
+    searchQuery
+      ? initialMemos.filter(
+          (memo) =>
+            memo.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            memo.content.toLowerCase().includes(searchQuery.toLowerCase()),
+        )
+      : initialMemos,
+  )
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const page = useRef(1)
@@ -27,9 +36,15 @@ export function MemoList({ initialMemos }: MemoListProps) {
 
     setLoading(true)
     try {
-      const response = await fetch(
-        `/api/memos?page=${page.current + 1}&limit=9`,
-      )
+      const params = new URLSearchParams({
+        page: String(page.current + 1),
+        limit: '9',
+      })
+      if (searchQuery) {
+        params.set('q', searchQuery)
+      }
+
+      const response = await fetch(`/api/memos?${params.toString()}`)
       const data = await response.json()
 
       if (data.memos.length === 0) {
@@ -52,6 +67,32 @@ export function MemoList({ initialMemos }: MemoListProps) {
     }
   }, [inView])
 
+  useEffect(() => {
+    setMemos(
+      searchQuery
+        ? initialMemos.filter(
+            (memo) =>
+              memo.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              memo.content.toLowerCase().includes(searchQuery.toLowerCase()),
+          )
+        : initialMemos,
+    )
+    page.current = 1
+    setHasMore(true)
+  }, [searchQuery, initialMemos])
+
+  if (memos.length === 0) {
+    return (
+      <div className="col-span-full text-center py-10">
+        <p className="text-gray-500 dark:text-gray-400">
+          {searchQuery
+            ? `No memos found for "${searchQuery}"`
+            : 'No memos yet. Create your first memo!'}
+        </p>
+      </div>
+    )
+  }
+
   return (
     <>
       {memos.map((memo) => (
@@ -61,6 +102,7 @@ export function MemoList({ initialMemos }: MemoListProps) {
           title={memo.title}
           content={memo.content}
           updatedAt={memo.updatedAt}
+          searchQuery={searchQuery}
         />
       ))}
       {hasMore && (

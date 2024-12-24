@@ -3,9 +3,11 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { PlusIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { useToast } from '@/components/ui/toast'
 
 export function NewMemoCard() {
   const router = useRouter()
+  const { showToast } = useToast()
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(false)
 
@@ -28,10 +30,15 @@ export function NewMemoCard() {
 
       if (response.ok) {
         setIsEditing(false)
-        router.refresh()
+        showToast('Memo created successfully', 'success')
+        if (typeof window !== 'undefined' && (window as any).__refreshMemos) {
+          ;(window as any).__refreshMemos()
+        }
+      } else {
+        showToast('Failed to create memo', 'error')
       }
     } catch (error) {
-      console.error('Failed to create memo:', error)
+      showToast('Failed to create memo', 'error')
     } finally {
       setLoading(false)
     }

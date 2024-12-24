@@ -3,28 +3,47 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { NewMemoCard } from '@/components/NewMemoCard'
 import { MemoList } from '@/components/MemoList'
+import { Search } from '@/components/ui/search'
 
-async function getInitialMemos(userId: string) {
+async function getInitialMemos(userId: string, query?: string) {
   const limit = 9
   const memos = await prisma.memo.findMany({
-    where: { userId },
+    where: {
+      userId,
+      OR: query
+        ? [
+            { title: { contains: query, mode: 'insensitive' } },
+            { content: { contains: query, mode: 'insensitive' } },
+          ]
+        : undefined,
+    },
     orderBy: { updatedAt: 'desc' },
     take: limit,
   })
-
   return memos
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: { q?: string }
+}) {
   const session = await getServerSession(authOptions)
-  const memos = session?.user?.id ? await getInitialMemos(session.user.id) : []
+  const memos = session?.user?.id
+    ? await getInitialMemos(session.user.id, searchParams.q)
+    : []
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">My Memos</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">My Memos</h1>
+        <div className="w-72">
+          <Search />
+        </div>
+      </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <NewMemoCard />
-        <MemoList initialMemos={memos} />
+        <MemoList initialMemos={memos} searchQuery={searchParams.q} />
       </div>
     </div>
   )

@@ -33,27 +33,31 @@ export async function POST(req: Request) {
   }
 }
 
-export async function GET(req: Request) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const { searchParams } = new URL(req.url)
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '9')
-    const skip = (page - 1) * limit
-
-    const memos = await prisma.memo.findMany({
-      where: { userId: session.user.id },
-      orderBy: { updatedAt: 'desc' },
-      take: limit,
-      skip,
-    })
-
-    return NextResponse.json({ memos })
-  } catch (error) {
-    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 })
+export async function GET(request: NextRequest) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) {
+    return new NextResponse('Unauthorized', { status: 401 })
   }
+
+  const searchParams = request.nextUrl.searchParams
+  const page = parseInt(searchParams.get('page') || '1')
+  const limit = parseInt(searchParams.get('limit') || '9')
+  const query = searchParams.get('q')
+
+  const memos = await prisma.memo.findMany({
+    where: {
+      userId: session.user.id,
+      OR: query
+        ? [
+            { title: { contains: query, mode: 'insensitive' } },
+            { content: { contains: query, mode: 'insensitive' } },
+          ]
+        : undefined,
+    },
+    orderBy: { updatedAt: 'desc' },
+    skip: (page - 1) * limit,
+    take: limit,
+  })
+
+  return NextResponse.json({ memos })
 }

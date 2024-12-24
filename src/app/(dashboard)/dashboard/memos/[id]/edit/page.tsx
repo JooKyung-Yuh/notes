@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { FormEvent, useEffect, useState } from 'react'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
+import { Skeleton } from '@/components/ui/skeleton'
 
 interface Memo {
   id: string
@@ -74,6 +75,21 @@ export default function EditMemoPage({ params }: { params: { id: string } }) {
         >
           Go back
         </button>
+      </div>
+    )
+  }
+
+  if (loading) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-6">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-10 w-10 rounded-full" />
+          <Skeleton className="h-8 w-48" />
+        </div>
+        <div className="space-y-4">
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-64 w-full" />
+        </div>
       </div>
     )
   }
