@@ -18,9 +18,10 @@ model User {
   email     String   @unique
   password  String
   name      String?
+  isAdmin   Boolean  @default(false)
+  memos     Memo[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  memos     Memo[]
 }
 
 model Memo {
