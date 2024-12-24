@@ -11,7 +11,13 @@ interface Memo {
   content: string
 }
 
-export default function EditMemoPage({ params }: { params: { id: string } }) {
+interface PageProps {
+  params: {
+    id: string
+  }
+}
+
+export default function EditMemoPage({ params }: PageProps) {
   const router = useRouter()
   const [memo, setMemo] = useState<Memo | null>(null)
   const [loading, setLoading] = useState(false)

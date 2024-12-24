@@ -23,11 +23,15 @@ async function getInitialMemos(userId: string, query?: string) {
   return memos
 }
 
-export default async function DashboardPage({
-  searchParams,
-}: {
-  searchParams: { q?: string }
-}) {
+interface SearchParams {
+  q?: string
+}
+
+interface PageProps {
+  searchParams: SearchParams
+}
+
+export default async function DashboardPage({ searchParams }: PageProps) {
   const session = await getServerSession(authOptions)
   const memos = session?.user?.id
     ? await getInitialMemos(session.user.id, searchParams.q)
