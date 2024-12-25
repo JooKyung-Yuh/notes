@@ -1,48 +1,29 @@
 import '@testing-library/jest-dom'
+import 'whatwg-fetch'
 import { TextEncoder, TextDecoder } from 'util'
+import { mockRouter, mockUseSearchParams } from './mocks/next-navigation'
 
+// 테스트 환경 설정
+process.env.NODE_ENV = 'test'
+
+// 기본 글로벌 객체 설정
 global.TextEncoder = TextEncoder
-global.TextDecoder = TextDecoder as any
+global.TextDecoder = TextDecoder
 
-// Mock Request and Response
-class MockRequest {
-  constructor(input: string | URL, init?: RequestInit) {
-    return {
-      url: input,
-      method: init?.method || 'GET',
-      headers: init?.headers || {},
-      body: init?.body,
-      json: async () => {
-        if (!init?.body) return {}
-        return JSON.parse(init.body as string)
-      },
-    }
-  }
-}
+// Mock fetch globally
+global.fetch = jest.fn(() =>
+  Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve({}),
+  }),
+)
 
-global.Request = MockRequest as any
-global.Response = class {
-  constructor(body: any, init?: ResponseInit) {
-    return {
-      json: async () => JSON.parse(body),
-      status: init?.status || 200,
-    }
-  }
-} as any
-
-// Mock IntersectionObserver
-class IntersectionObserver {
-  observe = jest.fn()
-  unobserve = jest.fn()
-  disconnect = jest.fn()
-  constructor() {}
-}
-
-Object.defineProperty(window, 'IntersectionObserver', {
-  writable: true,
-  configurable: true,
-  value: IntersectionObserver,
-})
+// Mock next/navigation
+jest.mock('next/navigation', () => ({
+  useRouter: () => mockRouter,
+  useSearchParams: () => mockUseSearchParams(),
+  usePathname: () => '/',
+}))
 
 // Mock matchMedia
 Object.defineProperty(window, 'matchMedia', {
@@ -59,21 +40,21 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 })
 
-// Mocks
-jest.mock('next/server', () => ({
-  NextResponse: {
-    json: (body: any, init?: ResponseInit) =>
-      new Response(JSON.stringify(body), init),
-  },
-  NextRequest: MockRequest,
-}))
+// Mock IntersectionObserver
+class IntersectionObserver {
+  observe = jest.fn()
+  unobserve = jest.fn()
+  disconnect = jest.fn()
+  constructor() {}
+}
 
-jest.mock('next-auth', () => ({
-  getServerSession: jest.fn(() => ({
-    user: { id: 'test-user-id' },
-  })),
-}))
+Object.defineProperty(window, 'IntersectionObserver', {
+  writable: true,
+  configurable: true,
+  value: IntersectionObserver,
+})
 
+// Prisma 모킹
 jest.mock('@/lib/db', () => ({
   prisma: {
     memo: {
@@ -83,13 +64,34 @@ jest.mock('@/lib/db', () => ({
       delete: jest.fn(),
       update: jest.fn(),
     },
-    user: {
-      findUnique: jest.fn(),
-      create: jest.fn(),
-    },
+    $connect: jest.fn(),
+    $disconnect: jest.fn(),
   },
 }))
 
+// @auth/prisma-adapter 모킹
 jest.mock('@auth/prisma-adapter', () => ({
-  PrismaAdapter: jest.fn(),
+  PrismaAdapter: jest.fn(() => ({
+    createUser: jest.fn(),
+    getUser: jest.fn(),
+    getUserByEmail: jest.fn(),
+    getUserByAccount: jest.fn(),
+    updateUser: jest.fn(),
+    deleteUser: jest.fn(),
+    linkAccount: jest.fn(),
+    unlinkAccount: jest.fn(),
+    createSession: jest.fn(),
+    getSessionAndUser: jest.fn(),
+    updateSession: jest.fn(),
+    deleteSession: jest.fn(),
+    createVerificationToken: jest.fn(),
+    useVerificationToken: jest.fn(),
+  })),
+}))
+
+// next-auth 모킹
+jest.mock('next-auth', () => ({
+  getServerSession: jest.fn(() => ({
+    user: { id: 'test-user-id', isAdmin: false },
+  })),
 }))

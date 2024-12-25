@@ -2,7 +2,9 @@ import { Response } from 'node-fetch'
 import { ApiError } from './errors'
 
 function handleApiError(error: unknown): ApiError {
-  console.error('API Error:', error)
+  if (process.env.NODE_ENV === 'development') {
+    console.error('API Error:', error)
+  }
 
   if (error instanceof Error) {
     return new ApiError(500, error.message)
@@ -12,6 +14,20 @@ function handleApiError(error: unknown): ApiError {
 }
 
 export function successResponse<T>(data: T, status = 200) {
+  if (process.env.NODE_ENV === 'test') {
+    return new Response(
+      JSON.stringify({
+        success: true,
+        data,
+        environment: 'test',
+      }),
+      {
+        status,
+        headers: { 'Content-Type': 'application/json' },
+      },
+    )
+  }
+
   return new Response(
     JSON.stringify({
       success: true,
@@ -19,7 +35,10 @@ export function successResponse<T>(data: T, status = 200) {
     }),
     {
       status,
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store', // Vercel 환경을 위한 캐시 설정
+      },
     },
   )
 }
@@ -27,14 +46,19 @@ export function successResponse<T>(data: T, status = 200) {
 export function errorResponse(error: unknown) {
   const apiError = error instanceof ApiError ? error : handleApiError(error)
 
-  return new Response(
-    JSON.stringify({
-      success: false,
-      error: apiError.message,
-    }),
-    {
-      status: apiError.statusCode,
-      headers: { 'Content-Type': 'application/json' },
+  const responseBody = {
+    success: false,
+    error: apiError.message,
+    ...(process.env.NODE_ENV === 'development' && { stack: apiError.stack }),
+  }
+
+  return new Response(JSON.stringify(responseBody), {
+    status: apiError.statusCode,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(process.env.NODE_ENV === 'production' && {
+        'Cache-Control': 'no-store',
+      }),
     },
-  )
+  })
 }
