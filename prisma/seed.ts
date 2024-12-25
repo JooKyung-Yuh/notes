@@ -1,9 +1,9 @@
-const { PrismaClient } = require('@prisma/client')
-const { hash } = require('bcryptjs')
-const dotenv = require('dotenv')
+import { PrismaClient } from '@prisma/client'
+import { hash } from 'bcryptjs'
+import dotenv from 'dotenv'
 
 dotenv.config()
-const prisma = new PrismaClient()
+const prismaClient = new PrismaClient()
 
 async function main() {
   const adminEmail = process.env.ADMIN_EMAIL
@@ -15,13 +15,13 @@ async function main() {
   }
 
   try {
-    const existingAdmin = await prisma.user.findUnique({
+    const existingAdmin = await prismaClient.user.findUnique({
       where: { email: adminEmail },
     })
 
     if (!existingAdmin) {
       const hashedPassword = await hash(adminPassword, 12)
-      await prisma.user.create({
+      await prismaClient.user.create({
         data: {
           email: adminEmail,
           password: hashedPassword,
@@ -44,5 +44,5 @@ main()
     process.exit(1)
   })
   .finally(async () => {
-    await prisma.$disconnect()
+    await prismaClient.$disconnect()
   })
