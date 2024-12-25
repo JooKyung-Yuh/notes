@@ -4,13 +4,14 @@ import { prisma } from '@/lib/db'
 import { authOptions } from '@/lib/auth'
 import { ApiError } from '@/lib/errors'
 import { successResponse, errorResponse } from '@/lib/api-response'
+import { Session } from 'next-auth'
 
 export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } },
 ): Promise<NextResponse> {
   try {
-    const session = await getServerSession(authOptions)
+    const session = (await getServerSession(authOptions)) as Session | null
     if (!session?.user?.id) {
       throw new ApiError(401, 'Unauthorized')
     }
