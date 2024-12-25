@@ -1,37 +1,45 @@
 import { render } from '@testing-library/react'
 import { SessionProvider } from 'next-auth/react'
-import { Providers } from '@/app/providers'
-import { ToastProvider } from '@/components/ui/toast'
+import { ThemeProvider } from 'next-themes'
+import React from 'react'
 
+// Mock session data
 const mockSession = {
   expires: new Date(Date.now() + 2 * 86400).toISOString(),
-  user: { name: 'Test User', email: 'test@example.com' },
+  user: {
+    id: 'test-user-id',
+    name: 'Test User',
+    email: 'test@example.com',
+    isGuest: false,
+  },
 }
 
-export const mockRouter = {
-  push: jest.fn(),
-  back: jest.fn(),
-  refresh: jest.fn(),
-  prefetch: jest.fn(),
+// Mock ToastProvider
+const MockToastProvider = ({ children }: { children: React.ReactNode }) => {
+  return <>{children}</>
 }
 
-jest.mock('next/navigation', () => ({
-  useRouter: () => mockRouter,
-  usePathname: () => '/',
-  useSearchParams: () => new URLSearchParams(),
-}))
+const Providers = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <SessionProvider session={mockSession}>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="system"
+        enableSystem
+        disableTransitionOnChange
+      >
+        <MockToastProvider>{children}</MockToastProvider>
+      </ThemeProvider>
+    </SessionProvider>
+  )
+}
 
-const customRender = (ui: React.ReactElement, options = {}) =>
-  render(ui, {
-    wrapper: ({ children }) => (
-      <SessionProvider session={mockSession}>
-        <Providers>
-          <ToastProvider>{children}</ToastProvider>
-        </Providers>
-      </SessionProvider>
-    ),
+const customRender = (ui: React.ReactElement, options = {}) => {
+  return render(ui, {
+    wrapper: Providers,
     ...options,
   })
+}
 
 export * from '@testing-library/react'
 export { customRender as render }

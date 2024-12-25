@@ -10,19 +10,11 @@ const customJestConfig = {
     moduleNameMapper: {
         '^@/(.*)$': '<rootDir>/src/$1',
     },
-    transformIgnorePatterns: [
-        'node_modules/(?!(@auth/prisma-adapter|next-themes|@prisma/client)/)',
-    ],
+    moduleDirectories: ['node_modules', '<rootDir>'],
+    testPathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/node_modules/'],
     transform: {
-        '^.+\\.(t|j)sx?$': ['@swc/jest'],
+        '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { presets: ['next/babel'] }],
     },
-    moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
-    testPathIgnorePatterns: ['/node_modules/', '/.next/'],
-    collectCoverageFrom: [
-        'src/**/*.{js,jsx,ts,tsx}',
-        '!src/**/*.d.ts',
-        '!src/tests/**/*',
-    ],
 }
 
 module.exports = createJestConfig(customJestConfig)

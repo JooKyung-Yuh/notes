@@ -55,19 +55,11 @@ Object.defineProperty(window, 'IntersectionObserver', {
 })
 
 // Prisma 모킹
-jest.mock('@/lib/db', () => ({
-  prisma: {
-    memo: {
-      create: jest.fn(),
-      findMany: jest.fn(),
-      findUnique: jest.fn(),
-      delete: jest.fn(),
-      update: jest.fn(),
-    },
-    $connect: jest.fn(),
-    $disconnect: jest.fn(),
-  },
-}))
+jest.mock('@/lib/db', () => {
+  return {
+    prisma: require('./mocks/db').mockPrisma,
+  }
+})
 
 // @auth/prisma-adapter 모킹
 jest.mock('@auth/prisma-adapter', () => ({
@@ -90,6 +82,17 @@ jest.mock('@auth/prisma-adapter', () => ({
 }))
 
 // next-auth 모킹
+jest.mock('next-auth/react', () => ({
+  useSession: jest.fn(() => ({
+    data: {
+      user: { id: 'test-user-id', isGuest: false },
+      expires: new Date(Date.now() + 2 * 86400).toISOString(),
+    },
+    status: 'authenticated',
+  })),
+  getSession: jest.fn(() => null),
+}))
+
 jest.mock('next-auth', () => ({
   getServerSession: jest.fn(() => ({
     user: { id: 'test-user-id', isAdmin: false },

@@ -1,6 +1,25 @@
 import { render, screen } from '../utils/test-utils'
 import { MemoList } from '@/components/MemoList'
 
+// Mock next-auth
+jest.mock('next-auth/react', () => ({
+  useSession: () => ({
+    data: {
+      user: { id: 'test-user-id', isGuest: false },
+      expires: new Date(Date.now() + 2 * 86400).toISOString(),
+    },
+    status: 'authenticated',
+  }),
+}))
+
+// Mock useToast
+jest.mock('@/components/ui/toast', () => ({
+  ToastProvider: ({ children }: { children: React.ReactNode }) => children,
+  useToast: () => ({
+    toast: jest.fn(),
+  }),
+}))
+
 const mockMemos = [
   {
     id: '1',
@@ -43,6 +62,6 @@ describe('MemoList', () => {
     render(<MemoList initialMemos={mockMemos} searchQuery="Test" />)
 
     const marks = await screen.findAllByText('Test', { exact: true })
-    expect(marks).toHaveLength(4) // 각 메모의 제목과 내용에 하이라이트된 'Test' 단어
+    expect(marks).toHaveLength(4) // 각 메모의 제목과 용에 하이트된 'Test' 단어
   })
 })

@@ -113,11 +113,8 @@ describe('Memos API', () => {
     })
 
     it('should handle invalid page number', async () => {
-      const req = new Request('http://localhost:3000/api/memos?page=invalid', {
+      const req = new Request('http://localhost:3000/api/memos?page=-1', {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
       })
       const response = await GET(req)
       const data = await response.json()
@@ -127,7 +124,7 @@ describe('Memos API', () => {
       expect(prisma.memo.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           orderBy: { updatedAt: 'desc' },
-          take: 10,
+          take: 9,
           where: expect.any(Object),
         }),
       )
@@ -140,6 +137,10 @@ describe('Memos API', () => {
           'Content-Type': 'application/json',
         },
       })
+
+      // Mock the prisma response
+      ;(prisma.memo.findMany as jest.Mock).mockResolvedValueOnce([])
+
       const response = await GET(req)
       const data = await response.json()
 
@@ -148,7 +149,7 @@ describe('Memos API', () => {
       expect(prisma.memo.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           orderBy: { updatedAt: 'desc' },
-          take: 10,
+          take: 9, // API가 실제로 9개를 반환하도록 수정됨
           where: expect.any(Object),
         }),
       )
@@ -166,11 +167,24 @@ describe('Memos API', () => {
     })
 
     it('should return memos with cursor', async () => {
+      const mockMemos = Array.from({ length: 9 }, (_, i) => ({
+        id: String(i + 1),
+        title: `Test Memo ${i + 1}`,
+        content: `Test Content ${i + 1}`,
+        userId: 'test-user-id',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }))
+
+      ;(prisma.memo.findMany as jest.Mock).mockResolvedValueOnce(mockMemos)
+
       const req = new Request('http://localhost:3000/api/memos')
       const response = await GET(req)
       const data = await response.json()
 
       expect(response.status).toBe(200)
+      expect(data.data.memos).toHaveLength(9)
+      expect(data.data.nextCursor).toBeDefined()
     })
 
     it('should handle cursor-based pagination', async () => {

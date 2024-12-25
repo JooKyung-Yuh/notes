@@ -2,7 +2,7 @@
 
 import { useSession } from 'next-auth/react'
 import { guestStorage } from '@/lib/guest-storage'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useInView } from 'react-intersection-observer'
 import { MemoCard } from './MemoCard'
@@ -36,7 +36,7 @@ export function MemoList({ initialMemos, searchQuery }: MemoListProps) {
   const { data: session } = useSession()
   const router = useRouter()
 
-  async function loadMoreMemos() {
+  const loadMoreMemos = useCallback(async () => {
     if (loading || !hasMore) return
 
     setLoading(true)
@@ -70,7 +70,7 @@ export function MemoList({ initialMemos, searchQuery }: MemoListProps) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [loading, hasMore, session?.user?.isGuest, memos, searchQuery])
 
   useEffect(() => {
     if (inView) {
