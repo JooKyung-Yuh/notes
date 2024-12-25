@@ -1,8 +1,8 @@
-import { getServerSession } from 'next-auth'
-import { redirect } from 'next/navigation'
-import { authOptions } from '@/lib/auth'
-import { isAdmin } from '@/lib/admin'
+import { hash } from 'bcryptjs'
 import { prisma } from '@/lib/db'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { redirect } from 'next/navigation'
 
 async function resetUserPassword(userId: string) {
   'use server'
@@ -11,65 +11,60 @@ async function resetUserPassword(userId: string) {
     where: { id: userId },
     data: { password: hashedPassword },
   })
+  return { message: 'Password reset successful' }
 }
 
-export default async function AdminDashboard() {
+export default async function AdminPage() {
   const session = await getServerSession(authOptions)
 
-  if (!session?.user?.email || !isAdmin(session.user.email)) {
-    redirect('/dashboard')
+  if (!session?.user?.isAdmin) {
+    redirect('/')
   }
 
   const users = await prisma.user.findMany({
     select: {
       id: true,
       email: true,
-      name: true,
-      createdAt: true,
-      _count: {
-        select: { memos: true },
-      },
+      isAdmin: true,
     },
-    orderBy: { createdAt: 'desc' },
   })
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="border-b dark:border-gray-700">
-              <th className="py-3 px-4 text-left">Email</th>
-              <th className="py-3 px-4 text-left">Name</th>
-              <th className="py-3 px-4 text-left">Joined</th>
-              <th className="py-3 px-4 text-left">Memos</th>
-              <th className="py-3 px-4 text-left">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((user) => (
-              <tr key={user.id} className="border-b dark:border-gray-700">
-                <td className="py-3 px-4">{user.email}</td>
-                <td className="py-3 px-4">{user.name || '-'}</td>
-                <td className="py-3 px-4">
-                  {new Date(user.createdAt).toLocaleDateString()}
-                </td>
-                <td className="py-3 px-4">{user._count.memos}</td>
-                <td className="py-3 px-4">
-                  <form action={resetUserPassword.bind(null, user.id)}>
-                    <button
-                      type="submit"
-                      className="text-sm text-blue-500 hover:text-blue-600"
-                    >
-                      Reset Password
-                    </button>
-                  </form>
-                </td>
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">Admin Dashboard</h1>
+      <div className="bg-white shadow rounded-lg p-6">
+        <h2 className="text-xl font-semibold mb-4">User Management</h2>
+        <div className="overflow-x-auto">
+          <table className="min-w-full table-auto">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="px-4 py-2">Email</th>
+                <th className="px-4 py-2">Role</th>
+                <th className="px-4 py-2">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {users.map((user) => (
+                <tr key={user.id} className="border-b">
+                  <td className="px-4 py-2">{user.email}</td>
+                  <td className="px-4 py-2">
+                    {user.isAdmin ? 'Admin' : 'User'}
+                  </td>
+                  <td className="px-4 py-2">
+                    <form action={resetUserPassword.bind(null, user.id)}>
+                      <button
+                        type="submit"
+                        className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                      >
+                        Reset Password
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   )
