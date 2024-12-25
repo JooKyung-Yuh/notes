@@ -1,7 +1,8 @@
 import { getServerSession } from 'next-auth'
-import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { authOptions } from '@/lib/auth'
+import { ApiError } from '@/lib/errors'
+import { successResponse, errorResponse } from '@/lib/api-response'
 
 interface User {
   id: string
@@ -21,15 +22,12 @@ export async function PUT(
   try {
     const session = (await getServerSession(authOptions)) as Session | null
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new ApiError(401, 'Unauthorized')
     }
 
     const { title, content } = await req.json()
     if (!title || !content) {
-      return NextResponse.json(
-        { error: 'Title and content are required' },
-        { status: 400 },
-      )
+      throw new ApiError(400, 'Title and content are required')
     }
 
     const memo = await prisma.memo.findUnique({
@@ -37,7 +35,7 @@ export async function PUT(
     })
 
     if (!memo || memo.userId !== session.user.id) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+      throw new ApiError(404, 'Not found')
     }
 
     const updatedMemo = await prisma.memo.update({
@@ -45,9 +43,9 @@ export async function PUT(
       data: { title, content },
     })
 
-    return NextResponse.json(updatedMemo)
+    return successResponse(updatedMemo)
   } catch (error) {
-    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 })
+    return errorResponse(error)
   }
 }
 
@@ -58,7 +56,7 @@ export async function DELETE(
   try {
     const session = (await getServerSession(authOptions)) as Session | null
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new ApiError(401, 'Unauthorized')
     }
 
     const memo = await prisma.memo.findUnique({
@@ -66,16 +64,16 @@ export async function DELETE(
     })
 
     if (!memo || memo.userId !== session.user.id) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+      throw new ApiError(404, 'Not found')
     }
 
     await prisma.memo.delete({
       where: { id: params.id },
     })
 
-    return NextResponse.json({ message: 'Memo deleted' })
+    return successResponse({ message: 'Memo deleted' })
   } catch (error) {
-    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 })
+    return errorResponse(error)
   }
 }
 
@@ -86,7 +84,7 @@ export async function GET(
   try {
     const session = (await getServerSession(authOptions)) as Session | null
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new ApiError(401, 'Unauthorized')
     }
 
     const memo = await prisma.memo.findUnique({
@@ -94,16 +92,15 @@ export async function GET(
     })
 
     if (!memo) {
-      return NextResponse.json({ error: 'Memo not found' }, { status: 404 })
+      throw new ApiError(404, 'Memo not found')
     }
 
-    // 본인의 메모만 조회 가능
     if (memo.userId !== session.user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      throw new ApiError(403, 'Forbidden')
     }
 
-    return NextResponse.json(memo)
+    return successResponse(memo)
   } catch (error) {
-    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 })
+    return errorResponse(error)
   }
 }

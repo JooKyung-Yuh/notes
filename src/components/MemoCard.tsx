@@ -101,6 +101,7 @@ export function MemoCard({
             <XMarkIcon className="w-5 h-5" />
           </button>
           <button
+            aria-label="save changes"
             onClick={handleUpdate}
             disabled={loading}
             className="p-2 text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
@@ -117,12 +118,14 @@ export function MemoCard({
       <div className="h-[300px] relative p-6 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm hover:shadow-md transition-all group">
         <div className="absolute top-6 right-6 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
+            aria-label="edit"
             onClick={() => setIsEditing(true)}
             className="p-2 text-gray-500 hover:text-blue-500 dark:text-gray-400 dark:hover:text-blue-400 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
           >
             <PencilIcon className="w-5 h-5" />
           </button>
           <button
+            aria-label="delete"
             onClick={handleDeleteClick}
             className="p-2 text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
           >

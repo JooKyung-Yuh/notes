@@ -97,6 +97,7 @@ export function DeleteConfirmation({
             Cancel
           </button>
           <button
+            aria-label="confirm delete"
             onClick={() => {
               onConfirm()
               onClose()
