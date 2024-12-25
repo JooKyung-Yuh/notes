@@ -3,9 +3,20 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { authOptions } from '@/lib/auth'
 
+interface User {
+  id: string
+  name?: string | null
+  email?: string | null
+  image?: string | null
+}
+
+interface Session {
+  user: User | null
+}
+
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = (await getServerSession(authOptions)) as Session | null
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -34,7 +45,7 @@ export async function POST(req: Request) {
 }
 
 export async function GET(request: NextRequest) {
-  const session = await getServerSession(authOptions)
+  const session = (await getServerSession(authOptions)) as Session | null
   if (!session?.user?.id) {
     return new NextResponse('Unauthorized', { status: 401 })
   }
