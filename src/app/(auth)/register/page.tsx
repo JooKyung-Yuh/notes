@@ -3,9 +3,12 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { FormEvent, useState } from 'react'
+import { useSession } from 'next-auth/react'
+import { guestStorage } from '@/lib/guest-storage'
 
 export default function RegisterPage() {
   const router = useRouter()
+  const { data: session } = useSession()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -20,6 +23,7 @@ export default function RegisterPage() {
       body: JSON.stringify({
         email: formData.get('email'),
         password: formData.get('password'),
+        guestMemos: session?.user?.isGuest ? guestStorage.getMemos() : [],
       }),
       headers: {
         'Content-Type': 'application/json',
@@ -33,17 +37,51 @@ export default function RegisterPage() {
       return
     }
 
-    router.push('/login?registered=true')
+    if (session?.user?.isGuest) {
+      guestStorage.clearAll()
+    }
+
+    router.push(
+      '/login?message=Account created successfully! Your memos have been transferred.',
+    )
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-sm space-y-8">
+        {session?.user?.isGuest && (
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+          >
+            <svg
+              className="w-4 h-4 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+              />
+            </svg>
+            Back to Dashboard
+          </Link>
+        )}
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-bold">Create an account</h1>
-          <p className="text-gray-500 dark:text-gray-400">
-            Enter your email below to create your account
-          </p>
+          {session?.user?.isGuest ? (
+            <p className="text-sm text-green-600 dark:text-green-400">
+              Your guest memos will be automatically transferred to your new
+              account!
+            </p>
+          ) : (
+            <p className="text-gray-500 dark:text-gray-400">
+              Enter your email below to create your account
+            </p>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">

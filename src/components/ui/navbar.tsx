@@ -1,8 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { signOut, useSession } from 'next-auth/react'
+import { useSession } from 'next-auth/react'
 import { ThemeToggle } from './theme-toggle'
+import { SignOutButton } from '@/components/SignOutButton'
 
 export function Navbar() {
   const { data: session } = useSession()
@@ -21,14 +22,7 @@ export function Navbar() {
           </div>
           <div className="flex items-center gap-4">
             <ThemeToggle />
-            {session && (
-              <button
-                onClick={() => signOut()}
-                className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-              >
-                Sign out
-              </button>
-            )}
+            {session?.user && <SignOutButton />}
           </div>
         </div>
       </div>

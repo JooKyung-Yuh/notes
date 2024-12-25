@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation'
 import { FormEvent, useEffect, useState } from 'react'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useSession } from 'next-auth/react'
+import { guestStorage } from '@/lib/guest-storage'
 
 interface Memo {
   id: string
@@ -22,10 +24,18 @@ export default function EditMemoPage({ params }: PageProps) {
   const [memo, setMemo] = useState<Memo | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const { data: session } = useSession()
 
   useEffect(() => {
     async function fetchMemo() {
       try {
+        if (session?.user?.isGuest) {
+          const guestMemo = guestStorage.getMemo(params.id)
+          setMemo(guestMemo)
+          setLoading(false)
+          return
+        }
+
         const response = await fetch(`/api/memos/${params.id}`)
         if (!response.ok) throw new Error('Failed to fetch memo')
         const data = await response.json()
@@ -33,11 +43,13 @@ export default function EditMemoPage({ params }: PageProps) {
       } catch (error) {
         setError('Failed to load memo')
         console.error(error)
+      } finally {
+        setLoading(false)
       }
     }
 
     fetchMemo()
-  }, [params.id])
+  }, [params.id, session?.user?.isGuest])
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -45,7 +57,16 @@ export default function EditMemoPage({ params }: PageProps) {
     setError('')
 
     const formData = new FormData(e.currentTarget)
+    const title = formData.get('title') as string
+    const content = formData.get('content') as string
+
     try {
+      if (session?.user?.isGuest) {
+        guestStorage.updateMemo(params.id, title, content)
+        router.push('/dashboard')
+        return
+      }
+
       const response = await fetch(`/api/memos/${params.id}`, {
         method: 'PUT',
         body: JSON.stringify({

@@ -1,4 +1,3 @@
-import { Response } from 'node-fetch'
 import { ApiError } from './errors'
 
 function handleApiError(error: unknown): ApiError {

@@ -1,8 +1,9 @@
-import { NextAuthOptions } from 'next-auth'
+import { AuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { PrismaAdapter } from '@auth/prisma-adapter'
+import { prisma } from '@/lib/db'
 import { compare } from 'bcryptjs'
-import { prisma } from './db'
+import { guestStorage } from './guest-storage'
 
 interface User {
   id: string
@@ -14,15 +15,31 @@ interface User {
   updatedAt: Date
 }
 
-export const authOptions: NextAuthOptions = {
+export const authOptions: AuthOptions = {
   adapter: PrismaAdapter(prisma),
   secret: process.env.NEXTAUTH_SECRET,
   providers: [
     CredentialsProvider({
+      id: 'guest',
+      name: 'Guest',
+      credentials: {},
+      async authorize() {
+        const guestUser = {
+          id: 'guest',
+          name: 'Guest',
+          email: 'guest@example.com',
+          isGuest: true,
+        }
+        return guestUser
+      },
+    }),
+    CredentialsProvider({
+      id: 'credentials',
       name: 'Credentials',
       credentials: {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
+        guestMemos: { label: 'Guest Memos', type: 'text' },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -33,8 +50,8 @@ export const authOptions: NextAuthOptions = {
           where: { email: credentials.email },
         })
 
-        if (!user) {
-          throw new Error('User not found')
+        if (!user || !user.password) {
+          throw new Error('Invalid credentials')
         }
 
         const isPasswordValid = await compare(
@@ -67,12 +84,14 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id
+        token.isGuest = (user as any).isGuest || false
       }
       return token
     },
     async session({ session, token }) {
-      if (session.user) {
-        ;(session.user as any).id = token.id
+      if (session?.user) {
+        session.user.id = token.id as string
+        session.user.isGuest = token.isGuest as boolean
       }
       return session
     },

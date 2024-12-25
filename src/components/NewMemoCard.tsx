@@ -4,41 +4,50 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { PlusIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { useToast } from '@/components/ui/toast'
+import { useSession } from 'next-auth/react'
+import { guestStorage } from '@/lib/guest-storage'
 
 export function NewMemoCard() {
-  const router = useRouter()
-  const { showToast } = useToast()
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(false)
+  const router = useRouter()
+  const { toast } = useToast()
+  const { data: session } = useSession()
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setLoading(true)
 
     const formData = new FormData(e.currentTarget)
+    const title = formData.get('title') as string
+    const content = formData.get('content') as string
+
     try {
+      if (session?.user?.isGuest) {
+        guestStorage.createMemo(title, content)
+        console.log('Guest memo created:', { title, content })
+        console.log('All guest memos:', guestStorage.getMemos())
+        router.refresh()
+        setIsEditing(false)
+        return
+      }
+
       const response = await fetch('/api/memos', {
         method: 'POST',
-        body: JSON.stringify({
-          title: formData.get('title'),
-          content: formData.get('content'),
-        }),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, content }),
       })
 
-      if (response.ok) {
-        setIsEditing(false)
-        showToast('Memo created successfully', 'success')
-        if (typeof window !== 'undefined' && (window as any).__refreshMemos) {
-          ;(window as any).__refreshMemos()
-        }
-      } else {
-        showToast('Failed to create memo', 'error')
-      }
+      if (!response.ok) throw new Error('Failed to create memo')
+
+      router.refresh()
+      setIsEditing(false)
     } catch (error) {
-      showToast('Failed to create memo', 'error')
+      toast({
+        title: 'Error',
+        description: 'Failed to create memo',
+        variant: 'destructive',
+      })
     } finally {
       setLoading(false)
     }

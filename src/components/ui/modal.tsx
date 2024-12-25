@@ -72,16 +72,20 @@ interface DeleteConfirmationProps {
   isOpen: boolean
   onClose: () => void
   onConfirm: () => void
-  title?: string
-  description?: string
+  title: string
+  message: React.ReactNode
+  confirmText: string
+  cancelText: string
 }
 
 export function DeleteConfirmation({
   isOpen,
   onClose,
   onConfirm,
-  title = 'Delete Memo',
-  description = 'Are you sure you want to delete this memo? This action cannot be undone.',
+  title,
+  message,
+  confirmText,
+  cancelText,
 }: DeleteConfirmationProps) {
   return (
     <Modal
@@ -94,7 +98,7 @@ export function DeleteConfirmation({
             onClick={onClose}
             className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
           >
-            Cancel
+            {cancelText}
           </button>
           <button
             aria-label="confirm delete"
@@ -104,12 +108,12 @@ export function DeleteConfirmation({
             }}
             className="px-4 py-2 bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 text-white rounded-lg transition-colors"
           >
-            Delete
+            {confirmText}
           </button>
         </div>
       }
     >
-      <p className="text-gray-600 dark:text-gray-400">{description}</p>
+      {message}
     </Modal>
   )
 }

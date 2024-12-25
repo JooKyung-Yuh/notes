@@ -12,6 +12,8 @@ import { useToast } from '@/components/ui/toast'
 import { DeleteConfirmation } from '@/components/ui/modal'
 import { useErrorHandler } from '@/hooks/use-error-handler'
 import { HighlightText } from '@/components/ui/highlight-text'
+import { useSession } from 'next-auth/react'
+import { guestStorage } from '@/lib/guest-storage'
 
 interface MemoCardProps {
   id: string
@@ -28,6 +30,7 @@ export function MemoCard({
   updatedAt,
   searchQuery,
 }: MemoCardProps) {
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
   const router = useRouter()
   const { showToast } = useToast()
   const [isEditing, setIsEditing] = useState(false)
@@ -36,10 +39,17 @@ export function MemoCard({
   const [content, setContent] = useState(initialContent)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const { handleError } = useErrorHandler()
+  const { data: session } = useSession()
 
   async function handleUpdate() {
     setLoading(true)
     try {
+      if (session?.user?.isGuest) {
+        guestStorage.deleteMemo(id)
+        router.refresh()
+        setShowDeleteModal(false)
+        return
+      }
       const response = await fetch(`/api/memos/${id}`, {
         method: 'PUT',
         body: JSON.stringify({ title, content }),

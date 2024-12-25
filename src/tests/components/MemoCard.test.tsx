@@ -1,9 +1,21 @@
 import { render, screen, fireEvent, waitFor } from '../utils/test-utils'
 import { MemoCard } from '@/components/MemoCard'
 import { mockRouter } from '../mocks/next-navigation'
+import { useSession } from 'next-auth/react'
+import { guestStorage } from '@/lib/guest-storage'
 
 jest.mock('next/navigation', () => ({
   useRouter: () => mockRouter,
+}))
+
+jest.mock('next-auth/react', () => ({
+  useSession: jest.fn(),
+}))
+
+jest.mock('@/lib/guest-storage', () => ({
+  guestStorage: {
+    deleteMemo: jest.fn(),
+  },
 }))
 
 const mockMemo = {

@@ -4,12 +4,13 @@ import { NextResponse } from 'next/server'
 export default withAuth(
   function middleware(req) {
     const isAuth = req.nextauth.token
+    const isGuest = req.nextauth.token?.isGuest
     const isAuthPage =
       req.nextUrl.pathname.startsWith('/login') ||
       req.nextUrl.pathname.startsWith('/register')
 
     if (isAuthPage) {
-      if (isAuth) {
+      if (isAuth && !isGuest) {
         return NextResponse.redirect(new URL('/dashboard', req.url))
       }
       return null
