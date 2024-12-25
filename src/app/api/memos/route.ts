@@ -5,7 +5,7 @@ import { authOptions } from '@/lib/auth'
 import { ApiError } from '@/lib/errors'
 import { successResponse, errorResponse } from '@/lib/api-response'
 
-export async function POST(req: Request) {
+export async function POST(req: Request): Promise<NextResponse> {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
