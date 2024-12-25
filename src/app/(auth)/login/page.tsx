@@ -25,27 +25,57 @@ export default function LoginPage() {
     setLoading(true)
     setError('')
 
-    const formData = new FormData(e.currentTarget)
-    const result = await signIn('credentials', {
-      email: formData.get('email'),
-      password: formData.get('password'),
-      guestMemos: session?.user?.isGuest
-        ? JSON.stringify(guestStorage.getMemos())
-        : '[]',
-      redirect: false,
-    })
+    try {
+      const formData = new FormData(e.currentTarget)
+      const email = formData.get('email')
+      // console.log('Attempting login with email:', email)
 
-    if (result?.error) {
-      setError(result.error)
+      const result = await signIn('credentials', {
+        email: email,
+        password: formData.get('password'),
+        guestMemos: session?.user?.isGuest
+          ? JSON.stringify(guestStorage.getMemos())
+          : '[]',
+        redirect: false,
+      })
+
+      if (result?.error) {
+        setError(result.error)
+        setLoading(false)
+        return
+      }
+
+      const adminCheck = await fetch('/api/admin/check')
+      const { isAdmin } = await adminCheck.json()
+      // console.log('Admin check result:', { email, isAdmin })
+
+      if (session?.user?.isGuest) {
+        const guestMemoData = guestStorage.getMemos()
+        await fetch('/api/auth/transfer-memos', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ memos: guestMemoData }),
+        })
+        guestStorage.clearAll()
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 500))
+      router.refresh()
+
+      if (isAdmin) {
+        // console.log('Redirecting to admin dashboard')
+        router.push('/admin')
+      } else {
+        // console.log('Redirecting to user dashboard')
+        router.push('/dashboard')
+      }
+    } catch (error) {
+      console.error('Login error:', error)
+      setError('An error occurred during sign in')
       setLoading(false)
-      return
     }
-
-    if (session?.user?.isGuest) {
-      guestStorage.clearAll()
-    }
-
-    router.push('/dashboard')
   }
 
   return (
@@ -130,9 +160,10 @@ export default function LoginPage() {
 
         <button
           type="submit"
-          className="w-full px-4 py-2 text-white bg-blue-500 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          disabled={loading}
+          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Sign In
+          {loading ? 'Signing in...' : 'Sign in'}
         </button>
 
         {!session?.user?.isGuest && (
@@ -171,6 +202,19 @@ export default function LoginPage() {
           Sign up
         </Link>
       </p>
+      <div className="text-sm text-center space-y-2">
+        <p className="text-gray-500 dark:text-gray-400">
+          Forgot your password?
+        </p>
+        <a
+          href="https://open.kakao.com/o/srvP966g"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+        >
+          Please contact the administrator to reset your password
+        </a>
+      </div>
     </div>
   )
 }

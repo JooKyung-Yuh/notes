@@ -25,8 +25,8 @@ export function NewMemoCard() {
     try {
       if (session?.user?.isGuest) {
         guestStorage.createMemo(title, content)
-        console.log('Guest memo created:', { title, content })
-        console.log('All guest memos:', guestStorage.getMemos())
+        // console.log('Guest memo created:', { title, content })
+        // console.log('All guest memos:', guestStorage.getMemos())
         router.refresh()
         setIsEditing(false)
         return

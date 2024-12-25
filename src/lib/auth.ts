@@ -4,6 +4,7 @@ import { PrismaAdapter } from '@auth/prisma-adapter'
 import { prisma } from '@/lib/db'
 import { compare } from 'bcryptjs'
 import { guestStorage } from './guest-storage'
+import { isAdmin } from './admin'
 
 interface User {
   id: string
@@ -84,14 +85,16 @@ export const authOptions: AuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id
-        token.isGuest = (user as any).isGuest || false
+        token.isGuest = user.isGuest || false
+        token.isAdmin = isAdmin(user.email)
       }
       return token
     },
     async session({ session, token }) {
-      if (session?.user) {
+      if (session.user) {
         session.user.id = token.id as string
         session.user.isGuest = token.isGuest as boolean
+        session.user.isAdmin = token.isAdmin as boolean
       }
       return session
     },
