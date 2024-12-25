@@ -76,7 +76,7 @@ export function MemoList({ initialMemos, searchQuery }: MemoListProps) {
     if (inView) {
       loadMoreMemos()
     }
-  }, [inView])
+  }, [inView, loadMoreMemos])
 
   useEffect(() => {
     if (session?.user?.isGuest) {

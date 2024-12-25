@@ -32,10 +32,9 @@ describe('EditMemoPage', () => {
   })
 
   it('handles guest mode editing correctly', async () => {
-    (useSession as jest.Mock).mockReturnValue({
+    ;(useSession as jest.Mock).mockReturnValue({
       data: { user: { isGuest: true } },
     })
-    
     ;(guestStorage.getMemo as jest.Mock).mockReturnValue(mockMemo)
     ;(guestStorage.updateMemo as jest.Mock).mockReturnValue({
       ...mockMemo,
@@ -65,7 +64,7 @@ describe('EditMemoPage', () => {
       expect(guestStorage.updateMemo).toHaveBeenCalledWith(
         '1',
         'Updated Title',
-        'Updated Content'
+        'Updated Content',
       )
       expect(mockRouter.push).toHaveBeenCalledWith('/dashboard')
     })
@@ -75,7 +74,6 @@ describe('EditMemoPage', () => {
     const mockFetch = jest.fn().mockResolvedValue({
       ok: true,
       json: () =>
-        new Promise((resolve) => setTimeout(() => resolve(mockMemo), 1000)),
         new Promise((resolve) => setTimeout(() => resolve(mockMemo), 1000)),
     })
 
