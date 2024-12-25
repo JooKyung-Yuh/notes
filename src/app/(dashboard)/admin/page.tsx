@@ -4,6 +4,18 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 
+interface User {
+  id: string
+  name?: string | null
+  email?: string | null
+  image?: string | null
+  isAdmin?: boolean
+}
+
+interface Session {
+  user: User | null
+}
+
 async function resetUserPassword(userId: string) {
   'use server'
   const hashedPassword = await hash('admin123', 12)
@@ -15,7 +27,7 @@ async function resetUserPassword(userId: string) {
 }
 
 export default async function AdminPage() {
-  const session = await getServerSession(authOptions)
+  const session = (await getServerSession(authOptions)) as Session | null
 
   if (!session?.user?.isAdmin) {
     redirect('/')
