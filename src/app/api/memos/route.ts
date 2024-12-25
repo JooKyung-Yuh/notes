@@ -2,6 +2,9 @@ import { getServerSession } from 'next-auth'
 import { NextResponse, NextRequest } from 'next/server'
 import { prisma } from '@/lib/db'
 import { authOptions } from '@/lib/auth'
+import { withAuth } from '@/middleware/auth'
+import { ApiError } from '@/lib/errors'
+import { successResponse, errorResponse } from '@/lib/api-response'
 
 interface User {
   id: string
@@ -14,20 +17,13 @@ interface Session {
   user: User | null
 }
 
-export async function POST(req: Request) {
+export const POST = withAuth(async (req: Request) => {
   try {
-    const session = (await getServerSession(authOptions)) as Session | null
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
+    const session = await getServerSession(authOptions)
     const { title, content } = await req.json()
 
     if (!title || !content) {
-      return NextResponse.json(
-        { error: 'Title and content are required' },
-        { status: 400 },
-      )
+      throw new ApiError(400, 'Title and content are required')
     }
 
     const memo = await prisma.memo.create({
@@ -38,11 +34,11 @@ export async function POST(req: Request) {
       },
     })
 
-    return NextResponse.json(memo, { status: 201 })
+    return successResponse(memo, 201)
   } catch (error) {
-    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 })
+    return errorResponse(error)
   }
-}
+})
 
 export async function GET(request: NextRequest) {
   const session = (await getServerSession(authOptions)) as Session | null
