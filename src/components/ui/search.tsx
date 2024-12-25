@@ -12,7 +12,7 @@ export function Search() {
   const debouncedValue = useDebounce(value, 300)
 
   useEffect(() => {
-    const params = new URLSearchParams(searchParams)
+    const params = new URLSearchParams(searchParams.toString())
     if (debouncedValue) {
       params.set('q', debouncedValue)
     } else {
