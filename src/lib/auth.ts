@@ -4,6 +4,16 @@ import { PrismaAdapter } from '@auth/prisma-adapter'
 import { compare } from 'bcryptjs'
 import { prisma } from './db'
 
+interface User {
+  id: string
+  email: string
+  password: string
+  name: string | null
+  isAdmin: boolean
+  createdAt: Date
+  updatedAt: Date
+}
+
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   secret: process.env.NEXTAUTH_SECRET,
