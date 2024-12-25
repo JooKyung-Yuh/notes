@@ -16,14 +16,13 @@ interface Session {
   user: User | null
 }
 
-async function resetUserPassword(userId: string) {
+async function resetUserPassword(userId: string, formData: FormData) {
   'use server'
   const hashedPassword = await hash('admin123', 12)
   await prisma.user.update({
     where: { id: userId },
     data: { password: hashedPassword },
   })
-  return { message: 'Password reset successful' }
 }
 
 export default async function AdminPage() {
