@@ -18,9 +18,9 @@ export function SignOutButton() {
     signOut()
   }
 
-  const handleConfirmSignOut = () => {
+  async function handleConfirmSignOut() {
     guestStorage.clearAll()
-    signOut()
+    await signOut({ callbackUrl: '/' })
     setShowModal(false)
   }
 

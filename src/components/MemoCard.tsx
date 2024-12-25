@@ -19,8 +19,9 @@ interface MemoCardProps {
   id: string
   title: string
   content: string
-  updatedAt: Date
+  updatedAt: Date | string
   searchQuery?: string
+  onDelete?: (id: string) => Promise<void>
 }
 
 export function MemoCard({
@@ -29,6 +30,7 @@ export function MemoCard({
   content: initialContent,
   updatedAt,
   searchQuery,
+  onDelete,
 }: MemoCardProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const router = useRouter()
@@ -163,6 +165,10 @@ export function MemoCard({
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={handleDelete}
+        title="Delete Memo"
+        message="Are you sure you want to delete this memo?"
+        confirmText="Delete"
+        cancelText="Cancel"
       />
     </>
   )

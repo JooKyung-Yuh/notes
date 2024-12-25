@@ -1,45 +1,22 @@
-import { render } from '@testing-library/react'
+import { render, RenderOptions } from '@testing-library/react'
 import { SessionProvider } from 'next-auth/react'
 import { ThemeProvider } from 'next-themes'
 import React from 'react'
 
-// Mock session data
-const mockSession = {
-  expires: new Date(Date.now() + 2 * 86400).toISOString(),
-  user: {
-    id: 'test-user-id',
-    name: 'Test User',
-    email: 'test@example.com',
-    isGuest: false,
-  },
-}
-
-// Mock ToastProvider
-const MockToastProvider = ({ children }: { children: React.ReactNode }) => {
-  return <>{children}</>
-}
-
-const Providers = ({ children }: { children: React.ReactNode }) => {
+const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
   return (
-    <SessionProvider session={mockSession}>
-      <ThemeProvider
-        attribute="class"
-        defaultTheme="system"
-        enableSystem
-        disableTransitionOnChange
-      >
-        <MockToastProvider>{children}</MockToastProvider>
+    <SessionProvider>
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        {children}
       </ThemeProvider>
     </SessionProvider>
   )
 }
 
-const customRender = (ui: React.ReactElement, options = {}) => {
-  return render(ui, {
-    wrapper: Providers,
-    ...options,
-  })
-}
+const customRender = (
+  ui: React.ReactElement,
+  options?: Omit<RenderOptions, 'wrapper'>,
+) => render(ui, { wrapper: AllTheProviders, ...options })
 
 export * from '@testing-library/react'
 export { customRender as render }

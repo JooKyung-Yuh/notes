@@ -3,6 +3,8 @@ export interface GuestUser {
   name: string
   isGuest: true
   createdAt: string
+  email: string | null
+  image: string | null
 }
 
 export interface GuestMemo {

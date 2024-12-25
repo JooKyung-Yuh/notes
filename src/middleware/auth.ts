@@ -1,6 +1,8 @@
-import { NextResponse } from 'next/server'
+import { errorResponse } from '@/lib/api-response'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { NextRequest, NextResponse } from 'next/server'
+import { Session } from 'next-auth'
 
 export async function withAuth(
   handler: Function,

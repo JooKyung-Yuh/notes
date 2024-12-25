@@ -71,7 +71,7 @@ export function Modal({
 interface DeleteConfirmationProps {
   isOpen: boolean
   onClose: () => void
-  onConfirm: () => void
+  onConfirm: () => Promise<void>
   title: string
   message: React.ReactNode
   confirmText: string

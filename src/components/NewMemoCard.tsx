@@ -11,7 +11,7 @@ export function NewMemoCard() {
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
-  const { toast } = useToast()
+  const { showToast } = useToast()
   const { data: session } = useSession()
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -43,11 +43,7 @@ export function NewMemoCard() {
       router.refresh()
       setIsEditing(false)
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to create memo',
-        variant: 'destructive',
-      })
+      showToast('Failed to create memo', 'error')
     } finally {
       setLoading(false)
     }

@@ -3,8 +3,23 @@ import { NextResponse, NextRequest } from 'next/server'
 import { prisma } from '@/lib/db'
 import { authOptions } from '@/lib/auth'
 import { ApiError } from '@/lib/errors'
-import { successResponse, errorResponse } from '@/lib/api-response'
 import { Session } from 'next-auth'
+
+function successResponse(data: any) {
+  return NextResponse.json({ data }, { status: 200 })
+}
+
+function errorResponse(error: unknown) {
+  if (error instanceof ApiError) {
+    return NextResponse.json(
+      { error: error.message },
+      { status: error.statusCode },
+    )
+  }
+
+  console.error('Unexpected error:', error)
+  return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+}
 
 export async function GET(
   req: NextRequest,

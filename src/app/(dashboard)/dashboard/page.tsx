@@ -12,6 +12,7 @@ interface User {
   name?: string | null
   email?: string | null
   image?: string | null
+  isGuest?: boolean
 }
 
 interface Session {
@@ -47,8 +48,11 @@ interface PageProps {
 export default async function DashboardPage({ searchParams }: PageProps) {
   const session = (await getServerSession(authOptions)) as Session | null
 
-  const memos = session?.user?.isGuest
-    ? guestStorage.getMemos()
+  let memos = session?.user?.isGuest
+    ? guestStorage.getMemos().map((memo) => ({
+        ...memo,
+        updatedAt: new Date(memo.updatedAt),
+      }))
     : session?.user?.id
     ? await getInitialMemos(session.user.id, searchParams.q)
     : []

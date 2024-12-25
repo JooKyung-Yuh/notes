@@ -7,17 +7,40 @@ const STORAGE_KEYS = {
   MEMOS: 'guest_memos',
 } as const
 
-export const guestStorage = {
-  createGuestUser(): GuestUser {
-    if (!isClient) return null
+interface GuestStorage {
+  createGuestUser: () => GuestUser
+  getGuestUser: () => GuestUser | null
+  getMemos: () => GuestMemo[]
+  getMemo: (id: string) => GuestMemo | null
+  createMemo: (title: string, content: string) => GuestMemo | null
+  updateMemo: (id: string, title: string, content: string) => GuestMemo | null
+  deleteMemo: (id: string) => boolean
+  clearAll: () => void
+}
 
-    const guestUser = {
+export const guestStorage: GuestStorage = {
+  createGuestUser(): GuestUser {
+    if (!isClient) {
+      return {
+        id: '',
+        isGuest: true,
+        name: 'Guest',
+        email: null,
+        image: null,
+        createdAt: new Date().toISOString(),
+      }
+    }
+
+    const guestUser: GuestUser = {
       id: `guest_${Date.now()}`,
-      name: 'Guest User',
-      isGuest: true,
+      isGuest: true as const,
+      name: 'Guest',
+      email: null,
+      image: null,
       createdAt: new Date().toISOString(),
     }
-    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(guestUser))
+
+    localStorage.setItem('guestUser', JSON.stringify(guestUser))
     return guestUser
   },
 
@@ -88,5 +111,12 @@ export const guestStorage = {
 
     localStorage.removeItem(STORAGE_KEYS.USER)
     localStorage.removeItem(STORAGE_KEYS.MEMOS)
+  },
+
+  getMemo(id: string): GuestMemo | null {
+    if (!isClient) return null
+
+    const memos = this.getMemos()
+    return memos.find((memo) => memo.id === id) || null
   },
 }

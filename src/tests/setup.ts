@@ -4,18 +4,19 @@ import { TextEncoder, TextDecoder } from 'util'
 import { mockRouter, mockUseSearchParams } from './mocks/next-navigation'
 
 // 테스트 환경 설정
-process.env.NODE_ENV = 'test'
+// process.env.NODE_ENV = 'test'
 
 // 기본 글로벌 객체 설정
 global.TextEncoder = TextEncoder
-global.TextDecoder = TextDecoder
 
 // Mock fetch globally
 global.fetch = jest.fn(() =>
-  Promise.resolve({
-    ok: true,
-    json: () => Promise.resolve({}),
-  }),
+  Promise.resolve(
+    new Response(JSON.stringify({}), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    }),
+  ),
 )
 
 // Mock next/navigation

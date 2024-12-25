@@ -6,12 +6,13 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useInView } from 'react-intersection-observer'
 import { MemoCard } from './MemoCard'
-
+import { useErrorHandler } from '@/hooks/use-error-handler'
+import { useToast } from '@/components/ui/toast'
 interface Memo {
   id: string
   title: string
   content: string
-  updatedAt: Date
+  updatedAt: Date | string
 }
 
 interface MemoListProps {
@@ -20,6 +21,8 @@ interface MemoListProps {
 }
 
 export function MemoList({ initialMemos, searchQuery }: MemoListProps) {
+  const { handleError } = useErrorHandler()
+  const { showToast } = useToast()
   const [memos, setMemos] = useState<Memo[]>(
     searchQuery
       ? initialMemos.filter(
@@ -97,7 +100,7 @@ export function MemoList({ initialMemos, searchQuery }: MemoListProps) {
     setHasMore(true)
   }, [searchQuery, initialMemos, session?.user?.isGuest])
 
-  async function handleDelete(id: string) {
+  const handleDelete = async (id: string) => {
     try {
       if (session?.user?.isGuest) {
         guestStorage.deleteMemo(id)
@@ -109,11 +112,12 @@ export function MemoList({ initialMemos, searchQuery }: MemoListProps) {
         method: 'DELETE',
       })
 
-      if (!response.ok) throw new Error('Failed to delete memo')
+      if (!response.ok) throw response
 
       router.refresh()
+      showToast('Memo deleted successfully', 'success')
     } catch (error) {
-      console.error(error)
+      handleError(error, 'Failed to delete memo')
     }
   }
 
