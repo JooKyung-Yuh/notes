@@ -5,7 +5,17 @@ function handleApiError(error: unknown): ApiError {
     console.error('API Error:', error)
   }
 
+  // 데이터베이스 연결 관련 에러 처리
   if (error instanceof Error) {
+    if (
+      error.message.includes('Connection') ||
+      error.message.includes('timeout')
+    ) {
+      return new ApiError(503, 'Database connection error, please try again')
+    }
+    if (error.message.includes('prisma')) {
+      return new ApiError(500, 'Database operation failed')
+    }
     return new ApiError(500, error.message)
   }
 
