@@ -6,6 +6,7 @@ import { ApiError } from '@/lib/errors'
 import { successResponse, errorResponse } from '@/lib/api-response'
 import { Session } from 'next-auth'
 import { guestStorage } from '@/lib/guest-storage'
+import { sortMemosByDate, searchMemos, paginateMemos } from '@/utils/memo'
 
 export async function POST(req: Request): Promise<Response> {
   try {
@@ -53,28 +54,14 @@ export async function GET(request: NextRequest): Promise<Response> {
 
     if (session.user.isGuest) {
       const guestMemos = guestStorage.getMemos()
-      let filteredMemos = guestMemos
-
-      if (query) {
-        filteredMemos = guestMemos.filter(
-          (memo) =>
-            memo.title.toLowerCase().includes(query.toLowerCase()) ||
-            memo.content.toLowerCase().includes(query.toLowerCase()),
-        )
-      }
-
-      const startIndex = cursor
-        ? guestMemos.findIndex((m) => m.id === cursor) + 1
-        : 0
-      const paginatedMemos = filteredMemos.slice(startIndex, startIndex + limit)
-
-      const nextCursor =
-        paginatedMemos.length === limit
-          ? paginatedMemos[paginatedMemos.length - 1].id
-          : undefined
+      const sortedMemos = sortMemosByDate(guestMemos)
+      const filteredMemos = query
+        ? searchMemos(sortedMemos, query)
+        : sortedMemos
+      const { items, nextCursor } = paginateMemos(filteredMemos, cursor)
 
       return successResponse({
-        memos: paginatedMemos,
+        memos: items,
         nextCursor,
       })
     }

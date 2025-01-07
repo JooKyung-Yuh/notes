@@ -8,6 +8,8 @@ import { useInView } from 'react-intersection-observer'
 import { MemoCard } from './MemoCard'
 import { useErrorHandler } from '@/hooks/use-error-handler'
 import { useToast } from '@/components/ui/toast'
+import { sortMemosByDate, searchMemos } from '@/utils/memo'
+
 interface Memo {
   id: string
   title: string
@@ -24,23 +26,7 @@ interface MemoListProps {
 export function MemoList({ initialMemos, searchQuery }: MemoListProps) {
   const { handleError } = useErrorHandler()
   const { showToast } = useToast()
-  const [memos, setMemos] = useState<Memo[]>(
-    searchQuery
-      ? initialMemos
-          .filter(
-            (memo) =>
-              memo.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-              memo.content.toLowerCase().includes(searchQuery.toLowerCase()),
-          )
-          .sort(
-            (a, b) =>
-              new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-          )
-      : initialMemos.sort(
-          (a, b) =>
-            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-        ),
-  )
+  const [memos, setMemos] = useState<Memo[]>(initialMemos)
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const page = useRef(1)
@@ -93,35 +79,11 @@ export function MemoList({ initialMemos, searchQuery }: MemoListProps) {
   useEffect(() => {
     if (session?.user?.isGuest) {
       const guestMemos = guestStorage.getMemos()
-      setMemos(
-        guestMemos.sort(
-          (a, b) =>
-            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-        ),
-      )
+      setMemos(sortMemosByDate(guestMemos))
     } else {
+      const sortedMemos = sortMemosByDate(initialMemos)
       setMemos(
-        searchQuery
-          ? initialMemos
-              .filter(
-                (memo) =>
-                  memo.title
-                    .toLowerCase()
-                    .includes(searchQuery.toLowerCase()) ||
-                  memo.content
-                    .toLowerCase()
-                    .includes(searchQuery.toLowerCase()),
-              )
-              .sort(
-                (a, b) =>
-                  new Date(b.updatedAt).getTime() -
-                  new Date(a.updatedAt).getTime(),
-              )
-          : initialMemos.sort(
-              (a, b) =>
-                new Date(b.updatedAt).getTime() -
-                new Date(a.updatedAt).getTime(),
-            ),
+        searchQuery ? searchMemos(sortedMemos, searchQuery) : sortedMemos,
       )
     }
     page.current = 1

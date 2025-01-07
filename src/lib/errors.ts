@@ -2,21 +2,18 @@ export class ApiError extends Error {
   constructor(
     public statusCode: number,
     message: string,
-    public details?: Record<string, any>,
+    public code?: string,
+    public details?: unknown,
   ) {
     super(message)
     this.name = 'ApiError'
   }
 }
 
-export function handleApiError(error: unknown): ApiError {
+export const errorHandler = (error: unknown) => {
   if (error instanceof ApiError) {
-    return error
+    return { statusCode: error.statusCode, message: error.message }
   }
-
-  if (error instanceof Error) {
-    return new ApiError(500, error.message)
-  }
-
-  return new ApiError(500, 'An unexpected error occurred')
+  console.error('Unhandled error:', error)
+  return { statusCode: 500, message: 'Internal server error' }
 }
