@@ -1,17 +1,19 @@
 'use client'
 
 import { signOut } from 'next-auth/react'
-import { useSession } from 'next-auth/react'
 import { useState } from 'react'
 import { DeleteConfirmation } from '@/components/ui/modal'
 import { guestStorage } from '@/lib/guest-storage'
 
-export function SignOutButton() {
-  const { data: session } = useSession()
+interface SignOutButtonProps {
+  isGuest?: boolean
+}
+
+export function SignOutButton({ isGuest }: SignOutButtonProps) {
   const [showModal, setShowModal] = useState(false)
 
   const handleSignOut = () => {
-    if (session?.user?.isGuest) {
+    if (isGuest) {
       setShowModal(true)
       return
     }

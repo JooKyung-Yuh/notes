@@ -28,7 +28,6 @@ export default function LoginPage() {
     try {
       const formData = new FormData(e.currentTarget)
       const email = formData.get('email')
-      // console.log('Attempting login with email:', email)
 
       const result = await signIn('credentials', {
         email: email,
@@ -47,7 +46,6 @@ export default function LoginPage() {
 
       const adminCheck = await fetch('/api/admin/check')
       const { isAdmin } = await adminCheck.json()
-      // console.log('Admin check result:', { email, isAdmin })
 
       if (session?.user?.isGuest) {
         const guestMemoData = guestStorage.getMemos()
@@ -61,15 +59,11 @@ export default function LoginPage() {
         guestStorage.clearAll()
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 500))
-      router.refresh()
-
+      // 세션 업데이트를 기다리지 않고 바로 리다이렉트
       if (isAdmin) {
-        // console.log('Redirecting to admin dashboard')
-        router.push('/admin')
+        window.location.href = '/admin'
       } else {
-        // console.log('Redirecting to user dashboard')
-        router.push('/dashboard')
+        window.location.href = '/dashboard'
       }
     } catch (error) {
       console.error('Login error:', error)
@@ -117,8 +111,10 @@ export default function LoginPage() {
         </>
       ) : (
         <div className="text-center space-y-2">
-          <h1 className="text-2xl font-bold">Welcome back</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+            Welcome back
+          </h1>
+          <p className="text-sm text-gray-600 dark:text-gray-300">
             Enter your email to sign in to your account
           </p>
         </div>
@@ -141,7 +137,11 @@ export default function LoginPage() {
               name="email"
               type="email"
               required
-              className="w-full px-3 py-2 border rounded-lg border-gray-200 dark:border-gray-800 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+              className="w-full px-3 py-2 border rounded-lg border-gray-200 dark:border-gray-700 
+                bg-white dark:bg-gray-800 
+                text-gray-900 dark:text-gray-100
+                placeholder-gray-400 dark:placeholder-gray-500
+                focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
             />
           </div>
           <div className="space-y-2">
@@ -153,7 +153,11 @@ export default function LoginPage() {
               name="password"
               type="password"
               required
-              className="w-full px-3 py-2 border rounded-lg border-gray-200 dark:border-gray-800 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+              className="w-full px-3 py-2 border rounded-lg border-gray-200 dark:border-gray-700 
+                bg-white dark:bg-gray-800 
+                text-gray-900 dark:text-gray-100
+                placeholder-gray-400 dark:placeholder-gray-500
+                focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
             />
           </div>
         </div>

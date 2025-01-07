@@ -57,12 +57,7 @@ export function NewMemoCard() {
     try {
       if (session?.user?.isGuest) {
         const imageUrls = images.map((img) => img.url)
-        const newMemo = guestStorage.createMemo(
-          title,
-          content,
-          imageUrls,
-          new Date().toISOString(),
-        )
+        const newMemo = guestStorage.createMemo(title, content, imageUrls)
         if (newMemo) {
           router.refresh()
           setIsEditing(false)

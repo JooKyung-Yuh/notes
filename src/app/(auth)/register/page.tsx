@@ -71,14 +71,16 @@ export default function RegisterPage() {
           </Link>
         )}
         <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold">Create an account</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+            Create an account
+          </h1>
           {session?.user?.isGuest ? (
             <p className="text-sm text-green-600 dark:text-green-400">
               Your guest memos will be automatically transferred to your new
               account!
             </p>
           ) : (
-            <p className="text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-gray-600 dark:text-gray-300">
               Enter your email below to create your account
             </p>
           )}
@@ -93,7 +95,10 @@ export default function RegisterPage() {
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium">
+              <label
+                htmlFor="email"
+                className="text-sm font-medium text-gray-900 dark:text-gray-100"
+              >
                 Email
               </label>
               <input
@@ -101,11 +106,18 @@ export default function RegisterPage() {
                 name="email"
                 type="email"
                 required
-                className="w-full px-3 py-2 border rounded-lg border-gray-200 dark:border-gray-800 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                className="w-full px-3 py-2 border rounded-lg border-gray-200 dark:border-gray-700 
+                  bg-white dark:bg-gray-800 
+                  text-gray-900 dark:text-gray-100
+                  placeholder-gray-400 dark:placeholder-gray-500
+                  focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
               />
             </div>
             <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-medium">
+              <label
+                htmlFor="password"
+                className="text-sm font-medium text-gray-900 dark:text-gray-100"
+              >
                 Password
               </label>
               <input
@@ -114,7 +126,11 @@ export default function RegisterPage() {
                 type="password"
                 required
                 minLength={6}
-                className="w-full px-3 py-2 border rounded-lg border-gray-200 dark:border-gray-800 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                className="w-full px-3 py-2 border rounded-lg border-gray-200 dark:border-gray-700 
+                  bg-white dark:bg-gray-800 
+                  text-gray-900 dark:text-gray-100
+                  placeholder-gray-400 dark:placeholder-gray-500
+                  focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
               />
             </div>
           </div>

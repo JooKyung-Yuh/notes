@@ -14,7 +14,7 @@ export function Navbar() {
     setMounted(true)
   }, [])
 
-  if (!mounted || status === 'loading') {
+  if (!mounted) {
     return null
   }
 
@@ -40,7 +40,7 @@ export function Navbar() {
               </Link>
             )}
             <ThemeToggle />
-            {session?.user && <SignOutButton />}
+            {session?.user && <SignOutButton isGuest={session.user.isGuest} />}
           </div>
         </div>
       </div>
