@@ -7,6 +7,8 @@ import { successResponse, errorResponse } from '@/lib/api-response'
 import { Session } from 'next-auth'
 import { guestStorage } from '@/lib/guest-storage'
 import { sortMemosByDate, searchMemos, paginateMemos } from '@/utils/memo'
+import { AppError } from '@/lib/errors'
+import { errorCodes } from '@/lib/errors'
 
 export async function POST(req: Request): Promise<Response> {
   try {
@@ -44,12 +46,15 @@ export async function GET(request: NextRequest): Promise<Response> {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      throw new ApiError(401, 'Unauthorized')
+      throw new AppError(
+        errorCodes.UNAUTHORIZED,
+        'Authentication required',
+        401,
+      )
     }
 
     const searchParams = request.nextUrl?.searchParams
     const cursor = searchParams?.get('cursor')
-    const limit = 9
     const query = searchParams?.get('q')
 
     if (session.user.isGuest) {
@@ -67,31 +72,38 @@ export async function GET(request: NextRequest): Promise<Response> {
     }
 
     // 일반 사용자의 메모 조회
-    const memos = await prisma.memo.findMany({
-      where: {
-        userId: session.user.id,
-        OR: query
-          ? [
-              { title: { contains: query, mode: 'insensitive' } },
-              { content: { contains: query, mode: 'insensitive' } },
-            ]
-          : undefined,
-      },
-      orderBy: { updatedAt: 'desc' },
-      take: limit,
-      ...(cursor && {
-        cursor: { id: cursor },
-        skip: 1,
-      }),
-    })
+    try {
+      const memos = await prisma.memo.findMany({
+        where: {
+          userId: session.user.id,
+          OR: query
+            ? [
+                { title: { contains: query, mode: 'insensitive' } },
+                { content: { contains: query, mode: 'insensitive' } },
+              ]
+            : undefined,
+        },
+        orderBy: { updatedAt: 'desc' },
+        take: 9,
+        ...(cursor && {
+          cursor: { id: cursor },
+          skip: 1,
+        }),
+      })
 
-    return successResponse({
-      memos,
-      nextCursor:
-        memos.length === limit ? memos[memos.length - 1].id : undefined,
-    })
+      return successResponse({
+        memos,
+        nextCursor: memos.length === 9 ? memos[memos.length - 1].id : undefined,
+      })
+    } catch (dbError) {
+      throw new AppError(
+        errorCodes.INTERNAL_ERROR,
+        'Database error occurred',
+        500,
+        dbError,
+      )
+    }
   } catch (error) {
-    console.error('Error in GET /api/memos:', error)
     return errorResponse(error)
   }
 }
