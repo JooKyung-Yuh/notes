@@ -1,11 +1,18 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { PlusIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { useToast } from '@/components/ui/toast'
 import { useSession } from 'next-auth/react'
 import { guestStorage } from '@/lib/guest-storage'
+
+// 이미지 타입 정의
+interface ImageData {
+  id: string
+  url: string
+  file: File
+}
 
 export function NewMemoCard() {
   const [isEditing, setIsEditing] = useState(false)
@@ -13,6 +20,31 @@ export function NewMemoCard() {
   const router = useRouter()
   const { showToast } = useToast()
   const { data: session } = useSession()
+  const [images, setImages] = useState<ImageData[]>([])
+
+  useEffect(() => {
+    const handlePaste = async (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items
+      if (!items) return
+
+      for (const item of items) {
+        if (item.type.indexOf('image') !== -1) {
+          const file = item.getAsFile()
+          if (file) {
+            const imageData = {
+              id: crypto.randomUUID(),
+              url: URL.createObjectURL(file),
+              file,
+            }
+            setImages((prev) => [...prev, imageData])
+          }
+        }
+      }
+    }
+
+    document.addEventListener('paste', handlePaste)
+    return () => document.removeEventListener('paste', handlePaste)
+  }, [])
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -24,18 +56,42 @@ export function NewMemoCard() {
 
     try {
       if (session?.user?.isGuest) {
-        guestStorage.createMemo(title, content)
-        // console.log('Guest memo created:', { title, content })
-        // console.log('All guest memos:', guestStorage.getMemos())
-        router.refresh()
-        setIsEditing(false)
+        const imageUrls = images.map((img) => img.url)
+        const newMemo = guestStorage.createMemo(
+          title,
+          content,
+          imageUrls,
+          new Date().toISOString(),
+        )
+        if (newMemo) {
+          router.refresh()
+          setIsEditing(false)
+          showToast('Memo created successfully', 'success')
+        }
         return
       }
+
+      const uploadedImages = await Promise.all(
+        images.map(async (img) => {
+          const imgFormData = new FormData()
+          imgFormData.append('file', img.file)
+          const response = await fetch('/api/upload', {
+            method: 'POST',
+            body: imgFormData,
+          })
+          if (!response.ok) throw new Error('Failed to upload image')
+          return response.json()
+        }),
+      )
 
       const response = await fetch('/api/memos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, content }),
+        body: JSON.stringify({
+          title,
+          content,
+          images: uploadedImages.map((img) => img.url),
+        }),
       })
 
       if (!response.ok) throw new Error('Failed to create memo')
@@ -80,12 +136,44 @@ export function NewMemoCard() {
         required
         className="w-full bg-transparent border-none p-0 text-lg font-medium text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none"
       />
-      <textarea
-        name="content"
-        placeholder="Write your memo..."
-        required
-        className="w-full h-[160px] bg-transparent border-none p-0 text-gray-600 dark:text-gray-400 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none resize-none"
-      />
+
+      <div className="flex gap-4 h-[160px]">
+        <textarea
+          name="content"
+          placeholder="Write your memo..."
+          required
+          className="flex-1 bg-transparent border-none p-0 text-gray-600 dark:text-gray-400 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none resize-none"
+        />
+
+        {/* 이미지 미리보기 섹션 */}
+        {images.length > 0 && (
+          <div className="w-32 flex-shrink-0 overflow-y-auto">
+            <div className="flex flex-col gap-2">
+              {images.map((image) => (
+                <div key={image.id} className="relative group">
+                  <img
+                    src={image.url}
+                    alt="Pasted image"
+                    className="w-full h-32 object-cover rounded-lg"
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setImages((prev) =>
+                        prev.filter((img) => img.id !== image.id),
+                      )
+                    }
+                    className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <XMarkIcon className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
       <div className="absolute bottom-6 right-6">
         <button
           type="submit"

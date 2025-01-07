@@ -14,11 +14,13 @@ import { useErrorHandler } from '@/hooks/use-error-handler'
 import { HighlightText } from '@/components/ui/highlight-text'
 import { useSession } from 'next-auth/react'
 import { guestStorage } from '@/lib/guest-storage'
+import { ImageModal } from '@/components/ui/image-modal'
 
 interface MemoCardProps {
   id: string
   title: string
   content: string
+  images?: string[]
   updatedAt: Date | string
   searchQuery?: string
   onDelete?: (id: string) => Promise<void>
@@ -28,6 +30,7 @@ export function MemoCard({
   id,
   title: initialTitle,
   content: initialContent,
+  images: initialImages = [],
   updatedAt,
   searchQuery,
   onDelete,
@@ -42,16 +45,22 @@ export function MemoCard({
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const { handleError } = useErrorHandler()
   const { data: session } = useSession()
+  const [images, setImages] = useState<string[]>(initialImages)
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
 
   async function handleUpdate() {
     setLoading(true)
     try {
       if (session?.user?.isGuest) {
-        guestStorage.deleteMemo(id)
-        router.refresh()
-        setShowDeleteModal(false)
+        const updatedMemo = guestStorage.updateMemo(id, title, content)
+        if (updatedMemo) {
+          setIsEditing(false)
+          router.refresh()
+          showToast('Memo updated successfully', 'success')
+        }
         return
       }
+
       const response = await fetch(`/api/memos/${id}`, {
         method: 'PUT',
         body: JSON.stringify({ title, content }),
@@ -74,6 +83,15 @@ export function MemoCard({
 
   async function handleDelete() {
     try {
+      if (session?.user?.isGuest) {
+        const deleted = guestStorage.deleteMemo(id)
+        if (deleted) {
+          router.refresh()
+          showToast('Memo deleted successfully', 'success')
+        }
+        return
+      }
+
       const response = await fetch(`/api/memos/${id}`, {
         method: 'DELETE',
       })
@@ -103,8 +121,36 @@ export function MemoCard({
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          className="w-full h-[180px] mt-4 resize-none bg-transparent focus:outline-none"
+          className="w-full h-[120px] mt-4 resize-none bg-transparent focus:outline-none"
         />
+
+        {/* 이미지 관리 섹션 */}
+        <div className="mt-4">
+          {images.length > 0 && (
+            <div className="flex gap-2 flex-wrap">
+              {images.map((image, index) => (
+                <div key={index} className="relative group">
+                  <img
+                    src={image}
+                    alt={`Image ${index + 1}`}
+                    className="w-16 h-16 object-cover rounded-lg cursor-pointer"
+                    onClick={() => setSelectedImage(image)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setImages((prev) => prev.filter((_, i) => i !== index))
+                    }
+                    className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <XMarkIcon className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         <div className="absolute bottom-6 right-6 flex items-center gap-2">
           <button
             onClick={() => setIsEditing(false)}
@@ -144,20 +190,48 @@ export function MemoCard({
             <TrashIcon className="w-5 h-5" />
           </button>
         </div>
-        <div className="space-y-2">
-          <HighlightText
-            text={title}
-            highlight={searchQuery}
-            className="block text-lg font-medium text-gray-900 dark:text-gray-100"
-          />
-          <HighlightText
-            text={content}
-            highlight={searchQuery}
-            className="block text-gray-600 dark:text-gray-400 line-clamp-6"
-          />
-        </div>
-        <div className="absolute bottom-6 left-6 text-xs text-gray-500 dark:text-gray-400">
-          {new Date(updatedAt).toLocaleDateString()}
+        <div className="space-y-2 h-full flex flex-col">
+          <h3 className="font-medium text-gray-900 dark:text-gray-100">
+            <HighlightText text={title} highlight={searchQuery} />
+          </h3>
+
+          {/* 이미지가 있는 경우 이미지 미리보기 표시 */}
+          {images && images.length > 0 && (
+            <div className="relative h-32 w-full overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800">
+              <img
+                src={images[0]}
+                alt={`Image for ${title}`}
+                className="h-full w-full object-cover cursor-pointer"
+                onClick={() => setSelectedImage(images[0])}
+              />
+              {images.length > 1 && (
+                <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
+                  +{images.length - 1}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 컨텐츠 영역 - 이미지가 있으면 높이 조절 */}
+          <div
+            className={`flex-1 overflow-hidden ${
+              images?.length ? 'max-h-24' : 'max-h-48'
+            }`}
+          >
+            <p className="text-gray-600 dark:text-gray-400 line-clamp-3">
+              <HighlightText text={content} highlight={searchQuery} />
+            </p>
+          </div>
+
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            {new Date(updatedAt).toLocaleString('ko-KR', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </div>
         </div>
       </div>
 
@@ -169,6 +243,14 @@ export function MemoCard({
         message="Are you sure you want to delete this memo?"
         confirmText="Delete"
         cancelText="Cancel"
+      />
+
+      <ImageModal
+        isOpen={!!selectedImage}
+        onClose={() => setSelectedImage(null)}
+        images={images}
+        currentImageIndex={selectedImage ? images.indexOf(selectedImage) : 0}
+        alt={`Image for ${title}`}
       />
     </>
   )

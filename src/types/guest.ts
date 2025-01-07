@@ -9,8 +9,10 @@ export interface GuestUser {
 
 export interface GuestMemo {
   id: string
+  guestId: string
   title: string
   content: string
+  images?: string[]
   createdAt: string
   updatedAt: string
 }

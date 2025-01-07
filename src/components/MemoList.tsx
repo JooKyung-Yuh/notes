@@ -12,6 +12,7 @@ interface Memo {
   id: string
   title: string
   content: string
+  images?: string[]
   updatedAt: Date | string
 }
 
@@ -25,12 +26,20 @@ export function MemoList({ initialMemos, searchQuery }: MemoListProps) {
   const { showToast } = useToast()
   const [memos, setMemos] = useState<Memo[]>(
     searchQuery
-      ? initialMemos.filter(
-          (memo) =>
-            memo.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            memo.content.toLowerCase().includes(searchQuery.toLowerCase()),
-        )
-      : initialMemos,
+      ? initialMemos
+          .filter(
+            (memo) =>
+              memo.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              memo.content.toLowerCase().includes(searchQuery.toLowerCase()),
+          )
+          .sort(
+            (a, b) =>
+              new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+          )
+      : initialMemos.sort(
+          (a, b) =>
+            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+        ),
   )
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(true)
@@ -84,16 +93,35 @@ export function MemoList({ initialMemos, searchQuery }: MemoListProps) {
   useEffect(() => {
     if (session?.user?.isGuest) {
       const guestMemos = guestStorage.getMemos()
-      setMemos(guestMemos)
+      setMemos(
+        guestMemos.sort(
+          (a, b) =>
+            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+        ),
+      )
     } else {
       setMemos(
         searchQuery
-          ? initialMemos.filter(
-              (memo) =>
-                memo.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                memo.content.toLowerCase().includes(searchQuery.toLowerCase()),
-            )
-          : initialMemos,
+          ? initialMemos
+              .filter(
+                (memo) =>
+                  memo.title
+                    .toLowerCase()
+                    .includes(searchQuery.toLowerCase()) ||
+                  memo.content
+                    .toLowerCase()
+                    .includes(searchQuery.toLowerCase()),
+              )
+              .sort(
+                (a, b) =>
+                  new Date(b.updatedAt).getTime() -
+                  new Date(a.updatedAt).getTime(),
+              )
+          : initialMemos.sort(
+              (a, b) =>
+                new Date(b.updatedAt).getTime() -
+                new Date(a.updatedAt).getTime(),
+            ),
       )
     }
     page.current = 1
@@ -141,6 +169,7 @@ export function MemoList({ initialMemos, searchQuery }: MemoListProps) {
           id={memo.id}
           title={memo.title}
           content={memo.content}
+          images={memo.images}
           updatedAt={memo.updatedAt}
           searchQuery={searchQuery}
           onDelete={handleDelete}

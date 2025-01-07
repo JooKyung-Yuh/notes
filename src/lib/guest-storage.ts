@@ -12,10 +12,15 @@ interface GuestStorage {
   getGuestUser: () => GuestUser | null
   getMemos: () => GuestMemo[]
   getMemo: (id: string) => GuestMemo | null
-  createMemo: (title: string, content: string) => GuestMemo | null
+  createMemo: (
+    title: string,
+    content: string,
+    images?: string[],
+  ) => GuestMemo | null
   updateMemo: (id: string, title: string, content: string) => GuestMemo | null
   deleteMemo: (id: string) => boolean
   clearAll: () => void
+  clearGuestMemos: (guestId: string) => void
 }
 
 export const guestStorage: GuestStorage = {
@@ -55,17 +60,31 @@ export const guestStorage: GuestStorage = {
     if (!isClient) return []
 
     const data = localStorage.getItem(STORAGE_KEYS.MEMOS)
-    return data ? JSON.parse(data) : []
+    const memos = data ? JSON.parse(data) : []
+    const currentGuestId = this.getGuestUser()?.id
+
+    return currentGuestId
+      ? memos.filter((memo: GuestMemo) => memo.guestId === currentGuestId)
+      : []
   },
 
-  createMemo(title: string, content: string): GuestMemo | null {
+  createMemo(
+    title: string,
+    content: string,
+    images: string[] = [],
+  ): GuestMemo | null {
     if (!isClient) return null
+
+    const guestId = this.getGuestUser()?.id
+    if (!guestId) return null
 
     const memos = this.getMemos()
     const newMemo = {
       id: `guest_memo_${Date.now()}`,
+      guestId,
       title,
       content,
+      images,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
@@ -109,8 +128,11 @@ export const guestStorage: GuestStorage = {
   clearAll() {
     if (!isClient) return
 
+    const currentUser = this.getGuestUser()
+    if (currentUser) {
+      this.clearGuestMemos(currentUser.id)
+    }
     localStorage.removeItem(STORAGE_KEYS.USER)
-    localStorage.removeItem(STORAGE_KEYS.MEMOS)
   },
 
   getMemo(id: string): GuestMemo | null {
@@ -118,5 +140,18 @@ export const guestStorage: GuestStorage = {
 
     const memos = this.getMemos()
     return memos.find((memo) => memo.id === id) || null
+  },
+
+  clearGuestMemos(guestId: string) {
+    if (!isClient) return
+
+    const allMemos = localStorage.getItem(STORAGE_KEYS.MEMOS)
+    if (!allMemos) return
+
+    const memos = JSON.parse(allMemos)
+    const remainingMemos = memos.filter(
+      (memo: GuestMemo) => memo.guestId !== guestId,
+    )
+    localStorage.setItem(STORAGE_KEYS.MEMOS, JSON.stringify(remainingMemos))
   },
 }
