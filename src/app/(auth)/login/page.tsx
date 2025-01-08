@@ -44,26 +44,31 @@ export default function LoginPage() {
         return
       }
 
-      const adminCheck = await fetch('/api/admin/check')
-      const { isAdmin } = await adminCheck.json()
+      // 로그인 성공 시 바로 리다이렉트
+      window.location.href = '/dashboard'
 
+      // Admin 체크는 백그라운드에서 수행
+      fetch('/api/admin/check')
+        .then(async (response) => {
+          const { isAdmin } = await response.json()
+          if (isAdmin) {
+            window.location.href = '/admin'
+          }
+        })
+        .catch(console.error)
+
+      // 게스트 메모 전송도 백그라운드에서 수행
       if (session?.user?.isGuest) {
         const guestMemoData = guestStorage.getMemos()
-        await fetch('/api/auth/transfer-memos', {
+        fetch('/api/auth/transfer-memos', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ memos: guestMemoData }),
         })
-        guestStorage.clearAll()
-      }
-
-      // 세션 업데이트를 기다리지 않고 바로 리다이렉트
-      if (isAdmin) {
-        window.location.href = '/admin'
-      } else {
-        window.location.href = '/dashboard'
+          .then(() => guestStorage.clearAll())
+          .catch(console.error)
       }
     } catch (error) {
       console.error('Login error:', error)

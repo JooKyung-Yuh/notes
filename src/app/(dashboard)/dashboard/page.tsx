@@ -6,6 +6,8 @@ import { MemoList } from '@/components/MemoList'
 import { Search } from '@/components/ui/search'
 import { guestStorage } from '@/lib/guest-storage'
 import Link from 'next/link'
+import { Suspense } from 'react'
+import { MemoListSkeleton } from '@/components/MemoListSkeleton'
 
 interface User {
   id: string
@@ -48,6 +50,7 @@ interface PageProps {
 export default async function DashboardPage({ searchParams }: PageProps) {
   const session = (await getServerSession(authOptions)) as Session | null
 
+  // 초기 메모 데이터 로드
   let memos = session?.user?.isGuest
     ? guestStorage.getMemos().map((memo) => ({
         ...memo,
@@ -83,10 +86,6 @@ export default async function DashboardPage({ searchParams }: PageProps) {
                 Log in to transfer your memos
               </Link>
             </div>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Your guest memos will be automatically transferred to your
-              account!
-            </p>
           </div>
         )}
         <div className="w-72">
@@ -95,7 +94,9 @@ export default async function DashboardPage({ searchParams }: PageProps) {
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <NewMemoCard />
-        <MemoList initialMemos={memos} searchQuery={searchParams.q} />
+        <Suspense fallback={<MemoListSkeleton />}>
+          <MemoList initialMemos={memos} searchQuery={searchParams.q} />
+        </Suspense>
       </div>
     </div>
   )

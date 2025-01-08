@@ -2,7 +2,6 @@ import { getServerSession } from 'next-auth'
 import { NextResponse, NextRequest } from 'next/server'
 import { prisma } from '@/lib/db'
 import { authOptions } from '@/lib/auth'
-import { ApiError } from '@/lib/errors'
 import { successResponse, errorResponse } from '@/lib/api-response'
 import { Session } from 'next-auth'
 import { guestStorage } from '@/lib/guest-storage'
@@ -14,13 +13,17 @@ export async function POST(req: Request): Promise<Response> {
   try {
     const session = (await getServerSession(authOptions)) as Session | null
     if (!session?.user?.id) {
-      throw new ApiError(401, 'Unauthorized')
+      throw new AppError(errorCodes.UNAUTHORIZED, 'Unauthorized', 401)
     }
 
     const { title, content } = await req.json()
 
     if (!title || !content) {
-      throw new ApiError(400, 'Title and content are required')
+      throw new AppError(
+        errorCodes.VALIDATION_ERROR,
+        'Title and content are required',
+        400,
+      )
     }
 
     if (session.user.isGuest) {
@@ -54,8 +57,8 @@ export async function GET(request: NextRequest): Promise<Response> {
     }
 
     const searchParams = request.nextUrl?.searchParams
-    const cursor = searchParams?.get('cursor')
-    const query = searchParams?.get('q')
+    const cursor = searchParams?.get('cursor') || undefined
+    const query = searchParams?.get('q') || undefined
 
     if (session.user.isGuest) {
       const guestMemos = guestStorage.getMemos()

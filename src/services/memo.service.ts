@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/db'
 import { Memo } from '@/types/memo'
-import { ApiError } from '@/lib/errors'
+import { AppError, errorCodes } from '@/lib/errors'
 
 export class MemoService {
   static async createMemo(
@@ -20,6 +20,13 @@ export class MemoService {
       query?: string
     },
   ) {
+    if (!userId) {
+      throw new AppError(
+        errorCodes.UNAUTHORIZED,
+        'Authentication required',
+        401,
+      )
+    }
     // 기존 GET 로직 이동
   }
 }

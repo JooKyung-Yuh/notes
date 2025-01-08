@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth'
 import { NextResponse, NextRequest } from 'next/server'
 import { prisma } from '@/lib/db'
 import { authOptions } from '@/lib/auth'
-import { ApiError } from '@/lib/errors'
+import { AppError, errorCodes } from '@/lib/errors'
 import { Session } from 'next-auth'
 
 function successResponse(data: any) {
@@ -10,7 +10,7 @@ function successResponse(data: any) {
 }
 
 function errorResponse(error: unknown) {
-  if (error instanceof ApiError) {
+  if (error instanceof AppError) {
     return NextResponse.json(
       { error: error.message },
       { status: error.statusCode },
@@ -28,7 +28,7 @@ export async function GET(
   try {
     const session = (await getServerSession(authOptions)) as Session | null
     if (!session?.user?.id) {
-      throw new ApiError(401, 'Unauthorized')
+      throw new AppError(errorCodes.UNAUTHORIZED, 'Unauthorized', 401)
     }
 
     const memo = await prisma.memo.findUnique({
@@ -36,11 +36,11 @@ export async function GET(
     })
 
     if (!memo) {
-      throw new ApiError(404, 'Memo not found')
+      throw new AppError(errorCodes.NOT_FOUND, 'Memo not found', 404)
     }
 
     if (memo.userId !== session.user.id) {
-      throw new ApiError(403, 'Forbidden')
+      throw new AppError(errorCodes.UNAUTHORIZED, 'Forbidden', 403)
     }
 
     return successResponse(memo)
@@ -56,7 +56,7 @@ export async function PUT(
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      throw new ApiError(401, 'Unauthorized')
+      throw new AppError(errorCodes.UNAUTHORIZED, 'Unauthorized', 401)
     }
 
     const { title, content } = await req.json()
@@ -65,7 +65,7 @@ export async function PUT(
     })
 
     if (!memo || memo.userId !== session.user.id) {
-      throw new ApiError(404, 'Not found')
+      throw new AppError(errorCodes.NOT_FOUND, 'Not found', 404)
     }
 
     const updatedMemo = await prisma.memo.update({
@@ -86,7 +86,7 @@ export async function DELETE(
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      throw new ApiError(401, 'Unauthorized')
+      throw new AppError(errorCodes.UNAUTHORIZED, 'Unauthorized', 401)
     }
 
     const memo = await prisma.memo.findUnique({
@@ -94,7 +94,7 @@ export async function DELETE(
     })
 
     if (!memo || memo.userId !== session.user.id) {
-      throw new ApiError(404, 'Not found')
+      throw new AppError(errorCodes.NOT_FOUND, 'Not found', 404)
     }
 
     await prisma.memo.delete({

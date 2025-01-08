@@ -1,6 +1,6 @@
-import { ApiError } from './errors'
+import { AppError, errorCodes } from './errors'
 
-function handleApiError(error: unknown): ApiError {
+function handleApiError(error: unknown): AppError {
   if (process.env.NODE_ENV === 'development') {
     console.error('API Error:', error)
   }
@@ -11,15 +11,27 @@ function handleApiError(error: unknown): ApiError {
       error.message.includes('Connection') ||
       error.message.includes('timeout')
     ) {
-      return new ApiError(503, 'Database connection error, please try again')
+      return new AppError(
+        errorCodes.INTERNAL_ERROR,
+        'Database connection error, please try again',
+        503,
+      )
     }
     if (error.message.includes('prisma')) {
-      return new ApiError(500, 'Database operation failed')
+      return new AppError(
+        errorCodes.INTERNAL_ERROR,
+        'Database operation failed',
+        500,
+      )
     }
-    return new ApiError(500, error.message)
+    return new AppError(errorCodes.INTERNAL_ERROR, error.message, 500)
   }
 
-  return new ApiError(500, 'An unexpected error occurred')
+  return new AppError(
+    errorCodes.INTERNAL_ERROR,
+    'An unexpected error occurred',
+    500,
+  )
 }
 
 export function successResponse<T>(data: T, status = 200) {
@@ -53,7 +65,7 @@ export function successResponse<T>(data: T, status = 200) {
 }
 
 export function errorResponse(error: unknown) {
-  const apiError = error instanceof ApiError ? error : handleApiError(error)
+  const apiError = error instanceof AppError ? error : handleApiError(error)
 
   const responseBody = {
     success: false,

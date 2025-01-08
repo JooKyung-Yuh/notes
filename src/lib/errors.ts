@@ -1,3 +1,5 @@
+import { ApiErrorResponse } from '@/types/api'
+
 export class AppError extends Error {
   constructor(
     public code: string,

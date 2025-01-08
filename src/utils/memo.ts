@@ -1,12 +1,17 @@
 import { Memo } from '@/types/memo'
 
-export const sortMemosByDate = (memos: Memo[]): Memo[] => {
+export function sortMemosByDate<T extends { updatedAt: string }>(
+  memos: T[],
+): T[] {
   return [...memos].sort(
     (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
   )
 }
 
-export const searchMemos = (memos: Memo[], query: string): Memo[] => {
+export function searchMemos<T extends { title: string; content: string }>(
+  memos: T[],
+  query: string,
+): T[] {
   const searchQuery = query.toLowerCase()
   return memos.filter(
     (memo) =>
@@ -15,11 +20,11 @@ export const searchMemos = (memos: Memo[], query: string): Memo[] => {
   )
 }
 
-export const paginateMemos = (
-  memos: Memo[],
+export function paginateMemos<T extends { id: string }>(
+  memos: T[],
   cursor?: string,
   limit: number = 9,
-): { items: Memo[]; nextCursor?: string } => {
+): { items: T[]; nextCursor?: string } {
   const startIndex = cursor ? memos.findIndex((m) => m.id === cursor) + 1 : 0
   const items = memos.slice(startIndex, startIndex + limit)
 

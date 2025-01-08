@@ -34,6 +34,10 @@ export function MemoList({ initialMemos, searchQuery }: MemoListProps) {
   const { data: session } = useSession()
   const router = useRouter()
 
+  useEffect(() => {
+    setMemos(initialMemos)
+  }, [initialMemos])
+
   const loadMoreMemos = useCallback(async () => {
     if (loading || !hasMore) return
 
@@ -75,20 +79,6 @@ export function MemoList({ initialMemos, searchQuery }: MemoListProps) {
       loadMoreMemos()
     }
   }, [inView, loadMoreMemos])
-
-  useEffect(() => {
-    if (session?.user?.isGuest) {
-      const guestMemos = guestStorage.getMemos()
-      setMemos(sortMemosByDate(guestMemos))
-    } else {
-      const sortedMemos = sortMemosByDate(initialMemos)
-      setMemos(
-        searchQuery ? searchMemos(sortedMemos, searchQuery) : sortedMemos,
-      )
-    }
-    page.current = 1
-    setHasMore(true)
-  }, [searchQuery, initialMemos, session?.user?.isGuest])
 
   const handleDelete = async (id: string) => {
     try {

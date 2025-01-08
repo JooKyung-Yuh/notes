@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 import { hash } from 'bcryptjs'
 import { NextResponse } from 'next/server'
+import { AppError, errorCodes } from '@/lib/errors'
 
 const prisma = new PrismaClient()
 
@@ -8,19 +9,19 @@ export async function POST(req: Request) {
   try {
     const { email, password, guestMemos } = await req.json()
 
-    // 이메일 유효성 검사
     if (!email || !email.includes('@')) {
-      return NextResponse.json(
-        { error: 'Invalid email address' },
-        { status: 400 },
+      throw new AppError(
+        errorCodes.VALIDATION_ERROR,
+        'Invalid email address',
+        400,
       )
     }
 
-    // 비밀번호 유효성 검사 (최소 6자)
     if (!password || password.length < 6) {
-      return NextResponse.json(
-        { error: 'Password must be at least 6 characters' },
-        { status: 400 },
+      throw new AppError(
+        errorCodes.VALIDATION_ERROR,
+        'Password must be at least 6 characters',
+        400,
       )
     }
 
@@ -70,9 +71,14 @@ export async function POST(req: Request) {
       { status: 201 },
     )
   } catch (error) {
-    console.error('Registration error:', error)
+    if (error instanceof AppError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.statusCode },
+      )
+    }
     return NextResponse.json(
-      { error: 'Something went wrong during registration' },
+      { error: 'Internal server error' },
       { status: 500 },
     )
   }
